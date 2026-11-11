@@ -73,3 +73,4 @@ func TestFactory(t *testing.T) {
 		t.Fatal("expected error for invalid type")
 	}
 }
+

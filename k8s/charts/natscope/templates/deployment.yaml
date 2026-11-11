@@ -55,6 +55,18 @@ spec:
                   name: {{ include "natscope.secretName" . }}
                   key: {{ .Values.natscope.auth.passwordKey | default "NATSCOPE_AUTH_PASS" }}
           {{- end }}
+          {{- if and .Values.natscope.s3.enabled .Values.natscope.s3.existingSecret }}
+            - name: NATSCOPE_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.natscope.s3.existingSecret }}
+                  key: {{ .Values.natscope.s3.accessKeyKey | default "AWS_ACCESS_KEY_ID" }}
+            - name: NATSCOPE_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.natscope.s3.existingSecret }}
+                  key: {{ .Values.natscope.s3.secretKeyKey | default "AWS_SECRET_ACCESS_KEY" }}
+          {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

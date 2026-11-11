@@ -9,23 +9,36 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
 
 // S3Driver communicates with AWS S3, MinIO, Cloudflare R2, Wasabi, or Ceph via standard S3 REST API.
 type S3Driver struct {
-	endpoint  string
-	bucket    string
-	region    string
-	accessKey string
-	secretKey string
-	useSSL    bool
-	client    *http.Client
+	endpoint     string
+	bucket       string
+	prefix       string
+	region       string
+	accessKey    string
+	secretKey    string
+	useSSL       bool
+	storageClass string
+	ttlDays      int
+	maxBytes     int64
+	client       *http.Client
+}
+
+// S3Options configures additional bucket properties like TTL and storage class.
+type S3Options struct {
+	Prefix       string
+	StorageClass string
+	TTLDays      int
+	MaxBytes     int64
 }
 
 // NewS3 creates a driver connected to an S3-compatible object store.
-func NewS3(endpoint, bucket, region, accessKey, secretKey string, useSSL bool) *S3Driver {
+func NewS3(endpoint, bucket, region, accessKey, secretKey string, useSSL bool, opts ...S3Options) *S3Driver {
 	if region == "" {
 		region = "us-east-1"
 	}
@@ -35,7 +48,7 @@ func NewS3(endpoint, bucket, region, accessKey, secretKey string, useSSL bool) *
 	endpoint = strings.TrimPrefix(endpoint, "http://")
 	endpoint = strings.TrimPrefix(endpoint, "https://")
 
-	return &S3Driver{
+	d := &S3Driver{
 		endpoint:  endpoint,
 		bucket:    bucket,
 		region:    region,
@@ -44,6 +57,13 @@ func NewS3(endpoint, bucket, region, accessKey, secretKey string, useSSL bool) *
 		useSSL:    useSSL,
 		client:    &http.Client{Timeout: 30 * time.Second},
 	}
+	if len(opts) > 0 {
+		d.prefix = strings.Trim(opts[0].Prefix, "/")
+		d.storageClass = strings.ToUpper(strings.TrimSpace(opts[0].StorageClass))
+		d.ttlDays = opts[0].TTLDays
+		d.maxBytes = opts[0].MaxBytes
+	}
+	return d
 }
 
 func (s *S3Driver) Name() string {
@@ -55,8 +75,11 @@ func (s *S3Driver) getURL(p string) string {
 	if !s.useSSL {
 		scheme = "http"
 	}
-	p = strings.TrimPrefix(p, "/")
-	return fmt.Sprintf("%s://%s/%s/%s", scheme, s.endpoint, s.bucket, p)
+	cleanPath := strings.TrimPrefix(p, "/")
+	if s.prefix != "" {
+		cleanPath = fmt.Sprintf("%s/%s", s.prefix, cleanPath)
+	}
+	return fmt.Sprintf("%s://%s/%s/%s", scheme, s.endpoint, s.bucket, cleanPath)
 }
 
 func (s *S3Driver) Load(ctx context.Context, p string) ([]byte, error) {
@@ -86,6 +109,10 @@ func (s *S3Driver) Load(ctx context.Context, p string) ([]byte, error) {
 }
 
 func (s *S3Driver) Save(ctx context.Context, p string, data []byte) error {
+	if s.maxBytes > 0 && int64(len(data)) > s.maxBytes {
+		return fmt.Errorf("storage quota exceeded: payload %d bytes exceeds max %d bytes", len(data), s.maxBytes)
+	}
+
 	reqURL := s.getURL(p)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, reqURL, bytes.NewReader(data))
 	if err != nil {
@@ -93,6 +120,17 @@ func (s *S3Driver) Save(ctx context.Context, p string, data []byte) error {
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
+
+	// Apply S3 Storage Class if configured (e.g. STANDARD_IA, INTELLIGENT_TIERING, GLACIER)
+	if s.storageClass != "" {
+		req.Header.Set("x-amz-storage-class", s.storageClass)
+	}
+
+	// Apply TTL tagging for lifecycle expiration if configured
+	if s.ttlDays > 0 {
+		req.Header.Set("x-amz-tagging", fmt.Sprintf("natscope_ttl_days=%d&created_at=%s", s.ttlDays, time.Now().UTC().Format(time.RFC3339)))
+	}
+
 	s.signRequest(req, data)
 
 	resp, err := s.client.Do(req)
@@ -162,15 +200,39 @@ func (s *S3Driver) signRequest(req *http.Request, payload []byte) {
 	}
 	canonicalQuery := req.URL.RawQuery
 
-	canonicalHeaders := fmt.Sprintf("host:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n",
-		req.URL.Host, payloadHash, amzDate)
-	signedHeaders := "host;x-amz-content-sha256;x-amz-date"
+	// Canonical Headers & Signed Headers
+	headerMap := map[string]string{
+		"host":                 req.URL.Host,
+		"x-amz-content-sha256": payloadHash,
+		"x-amz-date":           amzDate,
+	}
+	if sc := req.Header.Get("x-amz-storage-class"); sc != "" {
+		headerMap["x-amz-storage-class"] = sc
+	}
+	if tag := req.Header.Get("x-amz-tagging"); tag != "" {
+		headerMap["x-amz-tagging"] = tag
+	}
+
+	keys := make([]string, 0, len(headerMap))
+	for k := range headerMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var canonicalHeaders strings.Builder
+	for _, k := range keys {
+		canonicalHeaders.WriteString(k)
+		canonicalHeaders.WriteString(":")
+		canonicalHeaders.WriteString(headerMap[k])
+		canonicalHeaders.WriteString("\n")
+	}
+	signedHeaders := strings.Join(keys, ";")
 
 	canonicalRequest := strings.Join([]string{
 		req.Method,
 		canonicalURI,
 		canonicalQuery,
-		canonicalHeaders,
+		canonicalHeaders.String(),
 		signedHeaders,
 		payloadHash,
 	}, "\n")

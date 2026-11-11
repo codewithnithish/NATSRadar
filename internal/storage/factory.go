@@ -22,9 +22,16 @@ func NewDriver(cfg Config) (Driver, error) {
 			cfg.S3AccessKey,
 			cfg.S3SecretKey,
 			cfg.S3UseSSL,
+			S3Options{
+				Prefix:       cfg.S3Prefix,
+				StorageClass: cfg.S3StorageClass,
+				TTLDays:      cfg.S3TTLDays,
+				MaxBytes:     cfg.S3MaxBytes,
+			},
 		), nil
 
 	default:
 		return nil, fmt.Errorf("unsupported storage type: %s (valid: local, s3, nfs, pvc)", cfg.Type)
 	}
 }
+

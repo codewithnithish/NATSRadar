@@ -34,14 +34,18 @@ func run() error {
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel}))
 
 	storageDriver, err := storage.NewDriver(storage.Config{
-		Type:        cfg.StorageType,
-		StoragePath: cfg.StoragePath,
-		S3Endpoint:  cfg.S3Endpoint,
-		S3Bucket:    cfg.S3Bucket,
-		S3Region:    cfg.S3Region,
-		S3AccessKey: cfg.S3AccessKey,
-		S3SecretKey: cfg.S3SecretKey,
-		S3UseSSL:    cfg.S3UseSSL,
+		Type:           cfg.StorageType,
+		StoragePath:    cfg.StoragePath,
+		S3Endpoint:     cfg.S3Endpoint,
+		S3Bucket:       cfg.S3Bucket,
+		S3Prefix:       cfg.S3Prefix,
+		S3Region:       cfg.S3Region,
+		S3AccessKey:    cfg.S3AccessKey,
+		S3SecretKey:    cfg.S3SecretKey,
+		S3UseSSL:       cfg.S3UseSSL,
+		S3StorageClass: cfg.S3StorageClass,
+		S3TTLDays:      cfg.S3TTLDays,
+		S3MaxBytes:     cfg.S3MaxBytes,
 	})
 	if err != nil {
 		log.Warn("storage driver init fallback to local", "error", err)

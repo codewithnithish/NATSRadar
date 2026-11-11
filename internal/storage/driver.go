@@ -38,12 +38,16 @@ type Config struct {
 	StoragePath string // Base path / directory (default ".data/connections.json")
 
 	// S3 Configuration (AWS S3, MinIO, Wasabi, Ceph, Cloudflare R2)
-	S3Endpoint  string
-	S3Bucket    string
-	S3Region    string
-	S3AccessKey string
-	S3SecretKey string
-	S3UseSSL    bool
+	S3Endpoint     string // S3 host/endpoint (e.g. "s3.amazonaws.com", "minio.default.svc:9000")
+	S3Bucket       string // Configurable bucket name
+	S3Prefix       string // Subfolder or key prefix (e.g. "natscope/")
+	S3Region       string // S3 region (default "us-east-1")
+	S3AccessKey    string // AWS / MinIO Access Key ID
+	S3SecretKey    string // AWS / MinIO Secret Key
+	S3UseSSL       bool   // HTTPS (true) or HTTP (false)
+	S3StorageClass string // e.g. "STANDARD", "STANDARD_IA", "INTELLIGENT_TIERING", "GLACIER_IR"
+	S3TTLDays      int    // Lifecycle / object expiration in days (0 = no expiration)
+	S3MaxBytes     int64  // Maximum bucket storage quota in bytes (0 = unlimited)
 
 	// SFTP Configuration
 	SFTPHost     string

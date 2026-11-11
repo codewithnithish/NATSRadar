@@ -1095,6 +1095,10 @@ func (s *Server) getKVHistory(w http.ResponseWriter, r *http.Request) {
 type createObjectBucketRequest struct {
 	Bucket      string `json:"bucket"`
 	Description string `json:"description"`
+	TTL         string `json:"ttl,omitempty"`      // e.g. "24h", "7d", "30d", "1h"
+	MaxBytes    int64  `json:"maxBytes,omitempty"` // Maximum storage capacity in bytes
+	Storage     string `json:"storage,omitempty"`  // "file" (default) or "memory"
+	Replicas    int    `json:"replicas,omitempty"` // Replication factor (default 1)
 }
 
 func (s *Server) listObjectBuckets(w http.ResponseWriter, r *http.Request) {
@@ -1134,9 +1138,30 @@ func (s *Server) createObjectBucket(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
 	defer cancel()
 
+	var ttl time.Duration
+	if req.TTL != "" {
+		if d, err := time.ParseDuration(req.TTL); err == nil {
+			ttl = d
+		} else if n, err := strconv.ParseInt(req.TTL, 10, 64); err == nil {
+			ttl = time.Duration(n) * time.Second
+		}
+	}
+	storageType := jetstream.FileStorage
+	if strings.ToLower(strings.TrimSpace(req.Storage)) == "memory" {
+		storageType = jetstream.MemoryStorage
+	}
+	replicas := req.Replicas
+	if replicas <= 0 {
+		replicas = 1
+	}
+
 	if err := jsx.New(entry.JS).CreateObjectBucket(ctx, jetstream.ObjectStoreConfig{
 		Bucket:      bucket,
 		Description: req.Description,
+		TTL:         ttl,
+		MaxBytes:    req.MaxBytes,
+		Storage:     storageType,
+		Replicas:    replicas,
 	}); err != nil {
 		s.jetstreamError(w, err)
 		return
