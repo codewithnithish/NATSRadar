@@ -78,7 +78,7 @@ export function StreamsTable({
 
       {streams.isSuccess && streams.data.length === 0 && (
         <p className="muted pad">
-          No streams yet. Run <code>make seed</code> to create the demo DM and DCS streams.
+          No streams yet. Run <code>make seed</code> to create demo streams or click "+ Create Stream" above.
         </p>
       )}
 

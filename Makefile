@@ -9,7 +9,7 @@ help: ## Show this help
 nats: ## Run a local NATS server with JetStream (data in .data/nats)
 	nats-server -js -sd .data/nats -m 8222
 
-seed: ## Create demo DM/DCS streams and consumers on the local NATS
+seed: ## Create demo streams, consumers, KV stores and Object stores on local NATS
 	go run ./cmd/natscope-seed
 
 dev-api: ## Run the Go server on :8080 (serves the last built UI)
