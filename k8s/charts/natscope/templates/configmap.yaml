@@ -10,6 +10,17 @@ data:
   NATSCOPE_READ_ONLY: {{ .Values.natscope.readOnly | quote }}
   NATSCOPE_LOG_LEVEL: {{ .Values.natscope.logLevel | quote }}
   NATSCOPE_AUTH_ENABLED: {{ .Values.natscope.auth.enabled | quote }}
+  {{- if .Values.natscope.s3.enabled }}
+  NATSCOPE_STORAGE_TYPE: "s3"
+  NATSCOPE_S3_ENDPOINT: {{ .Values.natscope.s3.endpoint | quote }}
+  NATSCOPE_S3_BUCKET: {{ .Values.natscope.s3.bucket | quote }}
+  NATSCOPE_S3_PREFIX: {{ .Values.natscope.s3.prefix | quote }}
+  NATSCOPE_S3_REGION: {{ .Values.natscope.s3.region | quote }}
+  NATSCOPE_S3_USE_SSL: {{ .Values.natscope.s3.useSSL | quote }}
+  NATSCOPE_S3_STORAGE_CLASS: {{ .Values.natscope.s3.storageClass | default "STANDARD" | quote }}
+  NATSCOPE_S3_TTL_DAYS: {{ .Values.natscope.s3.ttlDays | default 0 | quote }}
+  NATSCOPE_S3_MAX_BYTES: {{ .Values.natscope.s3.maxBytes | default 0 | quote }}
+  {{- end }}
   {{- if .Values.persistence.enabled }}
   NATSCOPE_STORAGE_PATH: "{{ .Values.persistence.mountPath }}/connections.json"
   {{- end }}

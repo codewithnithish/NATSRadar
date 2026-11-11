@@ -23,6 +23,19 @@ type Config struct {
 	LogLevel slog.Level
 	// StoragePath is the file path where added connections are persisted.
 	StoragePath string
+	// StorageType specifies the storage provider: local, s3, nfs, pvc.
+	StorageType string
+	// S3 Configuration (Amazon S3, MinIO, Cloudflare R2, Ceph)
+	S3Endpoint     string
+	S3Bucket       string
+	S3Prefix       string
+	S3Region       string
+	S3AccessKey    string
+	S3SecretKey    string
+	S3UseSSL       bool
+	S3StorageClass string
+	S3TTLDays      int
+	S3MaxBytes     int64
 	// AuthEnabled turns on UI/API authentication.
 	AuthEnabled bool
 	// AuthUser is the administrative login username.
@@ -49,6 +62,17 @@ func FromEnv() Config {
 		ReadOnly:              getbool("NATSCOPE_READ_ONLY", false),
 		LogLevel:              parseLevel(getenv("NATSCOPE_LOG_LEVEL", "info")),
 		StoragePath:           getenv("NATSCOPE_STORAGE_PATH", ".data/connections.json"),
+		StorageType:           getenv("NATSCOPE_STORAGE_TYPE", "local"),
+		S3Endpoint:            getenv("NATSCOPE_S3_ENDPOINT", ""),
+		S3Bucket:              getenv("NATSCOPE_S3_BUCKET", ""),
+		S3Prefix:              getenv("NATSCOPE_S3_PREFIX", ""),
+		S3Region:              getenv("NATSCOPE_S3_REGION", "us-east-1"),
+		S3AccessKey:           getenv("NATSCOPE_S3_ACCESS_KEY", ""),
+		S3SecretKey:           getenv("NATSCOPE_S3_SECRET_KEY", ""),
+		S3UseSSL:              getbool("NATSCOPE_S3_USE_SSL", true),
+		S3StorageClass:        getenv("NATSCOPE_S3_STORAGE_CLASS", "STANDARD"),
+		S3TTLDays:             getint("NATSCOPE_S3_TTL_DAYS", 0),
+		S3MaxBytes:            getint64("NATSCOPE_S3_MAX_BYTES", 0),
 		AuthEnabled:           getbool("NATSCOPE_AUTH_ENABLED", true),
 		AuthUser:              getenv("NATSCOPE_AUTH_USER", "admin"),
 		AuthPass:              getenv("NATSCOPE_AUTH_PASS", "admin@123"),
@@ -72,6 +96,30 @@ func getbool(key string, def bool) bool {
 		return def
 	}
 	return b
+}
+
+func getint(key string, def int) int {
+	v, ok := os.LookupEnv(key)
+	if !ok {
+		return def
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil {
+		return def
+	}
+	return n
+}
+
+func getint64(key string, def int64) int64 {
+	v, ok := os.LookupEnv(key)
+	if !ok {
+		return def
+	}
+	n, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+	if err != nil {
+		return def
+	}
+	return n
 }
 
 func parseLevel(s string) slog.Level {

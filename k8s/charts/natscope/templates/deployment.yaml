@@ -55,6 +55,18 @@ spec:
                   name: {{ include "natscope.secretName" . }}
                   key: {{ .Values.natscope.auth.passwordKey | default "NATSCOPE_AUTH_PASS" }}
           {{- end }}
+          {{- if and .Values.natscope.s3.enabled .Values.natscope.s3.existingSecret }}
+            - name: NATSCOPE_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.natscope.s3.existingSecret }}
+                  key: {{ .Values.natscope.s3.accessKeyKey | default "AWS_ACCESS_KEY_ID" }}
+            - name: NATSCOPE_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.natscope.s3.existingSecret }}
+                  key: {{ .Values.natscope.s3.secretKeyKey | default "AWS_SECRET_ACCESS_KEY" }}
+          {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
@@ -69,8 +81,24 @@ spec:
       {{- if .Values.persistence.enabled }}
       volumes:
         - name: data
+          {{- if eq .Values.persistence.type "pvc" }}
           persistentVolumeClaim:
             claimName: {{ include "natscope.fullname" . }}-data
+          {{- else if eq .Values.persistence.type "existingClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim.name }}
+          {{- else if eq .Values.persistence.type "nfs" }}
+          nfs:
+            server: {{ .Values.persistence.nfs.server | quote }}
+            path: {{ .Values.persistence.nfs.path | quote }}
+            readOnly: {{ .Values.persistence.nfs.readOnly | default false }}
+          {{- else if eq .Values.persistence.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.hostPath.path | quote }}
+            type: {{ .Values.persistence.hostPath.type | default "DirectoryOrCreate" | quote }}
+          {{- else if eq .Values.persistence.type "emptyDir" }}
+          emptyDir: {}
+          {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

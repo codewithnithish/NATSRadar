@@ -91,13 +91,55 @@ natscope:
     userKey: "NATSCOPE_AUTH_USER"
     passwordKey: "NATSCOPE_AUTH_PASS"
 
-# Persistence for saved connection profiles
+  # S3 External Object Storage Provider (Alternative or supplement to volume persistence)
+  # Supported: AWS S3, MinIO, Ceph, Cloudflare R2, Wasabi, Google Cloud Storage
+  s3:
+    enabled: false
+    endpoint: "s3.amazonaws.com"
+    bucket: "natscope-storage"
+    prefix: "clusters/"
+    region: "us-east-1"
+    useSSL: true
+    storageClass: "STANDARD" # STANDARD | STANDARD_IA | INTELLIGENT_TIERING | GLACIER
+    ttlDays: 30              # Automatic object expiration / lifecycle in days (0 = no TTL)
+    maxBytes: 0              # Bucket storage quota limit in bytes (0 = unlimited)
+    # Existing Secret containing AWS credentials
+    existingSecret: ""
+    accessKeyKey: "AWS_ACCESS_KEY_ID"
+    secretKeyKey: "AWS_SECRET_ACCESS_KEY"
+
+# Persistence configuration supporting all Kubernetes volume types:
+# - pvc: Dynamic provisioning through a StorageClass
+# - existingClaim: Attach to an already existing PVC / PV
+# - nfs: Direct Network File System mount
+# - hostPath: Local node disk path
+# - emptyDir: Ephemeral container storage
 persistence:
   enabled: true
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 1Gi
+  type: "pvc" # pvc | existingClaim | nfs | hostPath | emptyDir
   mountPath: /data
+
+  # Settings for type: pvc
+  pvc:
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    annotations: {}
+
+  # Settings for type: existingClaim
+  existingClaim:
+    name: ""
+
+  # Settings for type: nfs
+  nfs:
+    server: ""
+    path: ""
+    readOnly: false
+
+  # Settings for type: hostPath
+  hostPath:
+    path: "/var/lib/natscope"
+    type: "DirectoryOrCreate"
 
 # Probes
 livenessProbe:
