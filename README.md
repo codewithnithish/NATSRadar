@@ -85,7 +85,7 @@ make build
 # 1. Local NATS server with JetStream
 make nats
 
-# 2. Seed demo streams (DM, DCS), KV stores, and Object stores
+# 2. Seed demo streams (ORDERS, PAYMENTS), KV stores, and Object stores
 make seed
 
 # 3. Backend API server

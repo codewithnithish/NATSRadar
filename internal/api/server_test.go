@@ -128,29 +128,29 @@ func TestConnectionAndStreamsEndToEnd(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if _, err := js.CreateStream(ctx, jetstream.StreamConfig{
-		Name: "DM", Subjects: []string{"dm.>"}, Storage: jetstream.MemoryStorage,
+		Name: "ORDERS", Subjects: []string{"orders.>"}, Storage: jetstream.MemoryStorage,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := js.Publish(ctx, "dm.created", []byte(`{}`)); err != nil {
+	if _, err := js.Publish(ctx, "orders.created", []byte(`{}`)); err != nil {
 		t.Fatal(err)
 	}
 
 	res, body = do(t, "GET", ts.URL+"/api/connections/local-dev/streams", "")
-	if res.StatusCode != 200 || !strings.Contains(body, `"name":"DM"`) || !strings.Contains(body, `"messages":1`) {
+	if res.StatusCode != 200 || !strings.Contains(body, `"name":"ORDERS"`) || !strings.Contains(body, `"messages":1`) {
 		t.Fatalf("streams: %d %s", res.StatusCode, body)
 	}
 
 	// Fetch messages from the stream.
-	res, body = do(t, "GET", ts.URL+"/api/connections/local-dev/streams/DM/messages?startSeq=1&limit=10", "")
-	if res.StatusCode != 200 || !strings.Contains(body, `"seq":1`) || !strings.Contains(body, `"subject":"dm.created"`) {
+	res, body = do(t, "GET", ts.URL+"/api/connections/local-dev/streams/ORDERS/messages?startSeq=1&limit=10", "")
+	if res.StatusCode != 200 || !strings.Contains(body, `"seq":1`) || !strings.Contains(body, `"subject":"orders.created"`) {
 		t.Fatalf("messages: %d %s", res.StatusCode, body)
 	}
 
 	// Test live tailing endpoint
 	tailCtx, tailCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer tailCancel()
-	tailReq, _ := http.NewRequestWithContext(tailCtx, "GET", ts.URL+"/api/connections/local-dev/tail?subject=dm.>", nil)
+	tailReq, _ := http.NewRequestWithContext(tailCtx, "GET", ts.URL+"/api/connections/local-dev/tail?subject=orders.>", nil)
 	tailRes, err := http.DefaultClient.Do(tailReq)
 	if err != nil {
 		t.Fatalf("tail request: %v", err)
@@ -238,23 +238,23 @@ func TestConnectionAndStreamsEndToEnd(t *testing.T) {
 	}
 
 	// Test Consumer Management (Create, Pause, Resume, Delete)
-	res, body = do(t, "POST", ts.URL+"/api/connections/local-dev/streams/DM/consumers",
-		`{"name":"dm-audit","durable":"dm-audit","deliverPolicy":"all","ackPolicy":"explicit"}`)
-	if res.StatusCode != 201 || !strings.Contains(body, `"name":"dm-audit"`) {
+	res, body = do(t, "POST", ts.URL+"/api/connections/local-dev/streams/ORDERS/consumers",
+		`{"name":"orders-audit","durable":"orders-audit","deliverPolicy":"all","ackPolicy":"explicit"}`)
+	if res.StatusCode != 201 || !strings.Contains(body, `"name":"orders-audit"`) {
 		t.Fatalf("create consumer: %d %s", res.StatusCode, body)
 	}
 
-	res, body = do(t, "POST", ts.URL+"/api/connections/local-dev/streams/DM/consumers/dm-audit/pause", `{"pauseMinutes":10}`)
+	res, body = do(t, "POST", ts.URL+"/api/connections/local-dev/streams/ORDERS/consumers/orders-audit/pause", `{"pauseMinutes":10}`)
 	if res.StatusCode != 200 || !strings.Contains(body, `"paused"`) {
 		t.Fatalf("pause consumer: %d %s", res.StatusCode, body)
 	}
 
-	res, body = do(t, "POST", ts.URL+"/api/connections/local-dev/streams/DM/consumers/dm-audit/resume", "")
+	res, body = do(t, "POST", ts.URL+"/api/connections/local-dev/streams/ORDERS/consumers/orders-audit/resume", "")
 	if res.StatusCode != 200 || !strings.Contains(body, `"resumed"`) {
 		t.Fatalf("resume consumer: %d %s", res.StatusCode, body)
 	}
 
-	res, _ = do(t, "DELETE", ts.URL+"/api/connections/local-dev/streams/DM/consumers/dm-audit", "")
+	res, _ = do(t, "DELETE", ts.URL+"/api/connections/local-dev/streams/ORDERS/consumers/orders-audit", "")
 	if res.StatusCode != 204 {
 		t.Fatalf("delete consumer: %d", res.StatusCode)
 	}

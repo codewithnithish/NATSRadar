@@ -1,11 +1,11 @@
 // Command natscope-seed creates demo streams and consumers so there is
-// something to look at in the UI. It models a "dm" service producing events
-// that a "dcs" service consumes, and the reverse.
+// something to look at in the UI. It models an "orders" service producing events
+// that a "payments" service consumes, and the reverse.
 //
 // Result after running:
 //
-//	DM  stream: 25 messages, consumer dcs-service -> 15 pending, 4 ack pending
-//	DCS stream:  5 messages, consumer dm-service  ->  5 pending
+//	ORDERS   stream: 25 messages, consumer payments-processor -> 15 pending, 4 ack pending
+//	PAYMENTS stream:  5 messages, consumer orders-worker      ->  5 pending
 package main
 
 import (
@@ -43,43 +43,43 @@ func run(url string) error {
 	defer cancel()
 
 	for _, cfg := range []jetstream.StreamConfig{
-		{Name: "DM", Subjects: []string{"dm.>"}, Storage: jetstream.FileStorage, MaxAge: 7 * 24 * time.Hour, Duplicates: 2 * time.Minute},
-		{Name: "DCS", Subjects: []string{"dcs.>"}, Storage: jetstream.FileStorage, MaxAge: 7 * 24 * time.Hour, Duplicates: 2 * time.Minute},
+		{Name: "ORDERS", Subjects: []string{"orders.>"}, Storage: jetstream.FileStorage, MaxAge: 7 * 24 * time.Hour, Duplicates: 2 * time.Minute},
+		{Name: "PAYMENTS", Subjects: []string{"payments.>"}, Storage: jetstream.FileStorage, MaxAge: 7 * 24 * time.Hour, Duplicates: 2 * time.Minute},
 	} {
 		if _, err := js.CreateOrUpdateStream(ctx, cfg); err != nil {
 			return fmt.Errorf("stream %s: %w", cfg.Name, err)
 		}
 	}
 
-	dcs, err := js.CreateOrUpdateConsumer(ctx, "DM", jetstream.ConsumerConfig{
-		Durable: "dcs-service", FilterSubject: "dm.>",
+	paymentsConsumer, err := js.CreateOrUpdateConsumer(ctx, "ORDERS", jetstream.ConsumerConfig{
+		Durable: "payments-processor", FilterSubject: "orders.>",
 		AckPolicy: jetstream.AckExplicitPolicy, AckWait: 30 * time.Second, MaxDeliver: 5,
 	})
 	if err != nil {
-		return fmt.Errorf("consumer dcs-service: %w", err)
+		return fmt.Errorf("consumer payments-processor: %w", err)
 	}
-	if _, err := js.CreateOrUpdateConsumer(ctx, "DCS", jetstream.ConsumerConfig{
-		Durable: "dm-service", FilterSubject: "dcs.>",
+	if _, err := js.CreateOrUpdateConsumer(ctx, "PAYMENTS", jetstream.ConsumerConfig{
+		Durable: "orders-worker", FilterSubject: "payments.>",
 		AckPolicy: jetstream.AckExplicitPolicy, AckWait: 30 * time.Second, MaxDeliver: 5,
 	}); err != nil {
-		return fmt.Errorf("consumer dm-service: %w", err)
+		return fmt.Errorf("consumer orders-worker: %w", err)
 	}
 
 	for i := 1; i <= 25; i++ {
-		payload := fmt.Sprintf(`{"docId":"D%d","status":"CREATED"}`, i)
-		if _, err := js.Publish(ctx, "dm.created", []byte(payload), jetstream.WithMsgID(fmt.Sprintf("seed-dm-%d", i))); err != nil {
-			return fmt.Errorf("publish dm.created: %w", err)
+		payload := fmt.Sprintf(`{"orderId":"ORD-%d","amount":%.2f,"status":"CREATED"}`, i, float64(i)*19.99)
+		if _, err := js.Publish(ctx, "orders.created", []byte(payload), jetstream.WithMsgID(fmt.Sprintf("seed-order-%d", i))); err != nil {
+			return fmt.Errorf("publish orders.created: %w", err)
 		}
 	}
 	for i := 1; i <= 5; i++ {
-		payload := fmt.Sprintf(`{"docId":"D%d","status":"PROCESSED"}`, i)
-		if _, err := js.Publish(ctx, "dcs.processed", []byte(payload), jetstream.WithMsgID(fmt.Sprintf("seed-dcs-%d", i))); err != nil {
-			return fmt.Errorf("publish dcs.processed: %w", err)
+		payload := fmt.Sprintf(`{"paymentId":"PAY-%d","status":"PROCESSED"}`, i)
+		if _, err := js.Publish(ctx, "payments.processed", []byte(payload), jetstream.WithMsgID(fmt.Sprintf("seed-payment-%d", i))); err != nil {
+			return fmt.Errorf("publish payments.processed: %w", err)
 		}
 	}
 
-	// dcs-service fetches 10 messages and acks 6, leaving 4 "in flight" (ack pending).
-	batch, err := dcs.Fetch(10, jetstream.FetchMaxWait(3*time.Second))
+	// payments-processor fetches 10 messages and acks 6, leaving 4 "in flight" (ack pending).
+	batch, err := paymentsConsumer.Fetch(10, jetstream.FetchMaxWait(3*time.Second))
 	if err != nil {
 		return fmt.Errorf("fetch: %w", err)
 	}
@@ -96,7 +96,7 @@ func run(url string) error {
 		return fmt.Errorf("fetch batch: %w", err)
 	}
 
-	fmt.Println("seeded: streams DM, DCS; consumers dcs-service (on DM), dm-service (on DCS)")
+	fmt.Println("seeded: streams ORDERS, PAYMENTS; consumers payments-processor (on ORDERS), orders-worker (on PAYMENTS)")
 
 	// Seed Key-Value stores
 	appConfigs, err := js.CreateOrUpdateKeyValue(ctx, jetstream.KeyValueConfig{
