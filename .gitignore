@@ -1,0 +1,14 @@
+# build output
+bin/
+.data/
+web/dist/
+web/node_modules/
+internal/webui/dist/*
+!internal/webui/dist/.gitkeep
+
+# OS / editor
+.DS_Store
+._*
+.idea/
+.vscode/
+*.log
