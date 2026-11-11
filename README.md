@@ -55,10 +55,15 @@ Run NATS + Natscope with demo data in one command:
 
 ```bash
 # 1. Start NATS and Natscope
-docker compose -f deploy/compose/docker-compose.yml up --build
+docker compose -f docker/docker-compose.yml up --build -d
 
 # 2. In another terminal, seed demo streams, KV buckets, and files:
-docker compose -f deploy/compose/docker-compose.yml --profile seed run --rm seed
+docker compose -f docker/docker-compose.yml --profile seed run --rm seed
+```
+
+Or connect Natscope standalone to an existing NATS server on your machine:
+```bash
+docker compose -f docker/standalone.yml up -d
 ```
 
 Open **http://localhost:8080** and sign in:
@@ -67,7 +72,24 @@ Open **http://localhost:8080** and sign in:
 
 ---
 
-### Option B: Local Standalone Binary
+### Option B: Deploy on Kubernetes via Helm
+
+Deploy directly to your Kubernetes cluster:
+
+```bash
+helm install natscope k8s/charts/natscope \
+  --namespace natscope --create-namespace \
+  --set natscope.natsUrl="nats://nats.default.svc.cluster.local:4222"
+```
+
+Port forward to open the UI:
+```bash
+kubectl port-forward -n natscope svc/natscope 8080:8080
+```
+
+---
+
+### Option C: Local Standalone Binary
 
 ```bash
 # Build the single standalone binary (React UI is embedded inside Go binary)

@@ -1,0 +1,27 @@
+# Standalone Natscope UI (Connects to an existing NATS Server)
+# Usage:
+#   docker compose -f docker/standalone.yml up -d
+services:
+  natscope:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: natscope-ui
+    environment:
+      # Use host.docker.internal to reach NATS running on the host machine
+      NATS_URL: ${NATS_URL:-nats://host.docker.internal:4222}
+      NATSCOPE_STORAGE_PATH: /data/connections.json
+      NATSCOPE_AUTH_ENABLED: "${NATSCOPE_AUTH_ENABLED:-true}"
+      NATSCOPE_AUTH_USER: "${NATSCOPE_AUTH_USER:-admin}"
+      NATSCOPE_AUTH_PASS: "${NATSCOPE_AUTH_PASS:-admin@123}"
+      NATSCOPE_DEFAULT_CONNECTION_NAME: "${NATSCOPE_DEFAULT_CONNECTION_NAME:-Host NATS}"
+    volumes:
+      - natscope-data:/data
+    ports:
+      - "${NATSCOPE_PORT:-8080}:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  natscope-data:
+

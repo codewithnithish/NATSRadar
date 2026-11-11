@@ -12,3 +12,8 @@ internal/webui/dist/*
 .idea/
 .vscode/
 *.log
+
+# Python
+.venv/
+__pycache__/
+*.pyc

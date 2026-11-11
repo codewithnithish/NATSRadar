@@ -1,0 +1,64 @@
+# Full Stack: NATS (JetStream on) + Natscope
+# Usage:
+#   docker compose -f docker/docker-compose.yml up -d
+#   docker compose -f docker/docker-compose.yml --profile seed run --rm seed
+services:
+  nats:
+    image: nats:2-alpine
+    container_name: nats-server
+    command:
+      - "-js"
+      - "-sd"
+      - "${NATS_STORE_DIR:-/data}"
+      - "-m"
+      - "8222"
+      - "--max_mem"
+      - "${NATS_MAX_MEM:-2G}"
+      - "--max_file"
+      - "${NATS_MAX_FILE:-20G}"
+    ports:
+      - "${NATS_CLIENT_PORT:-4222}:4222"
+      - "${NATS_MONITOR_PORT:-8222}:8222"
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  natscope:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: natscope-ui
+    environment:
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
+      NATSCOPE_STORAGE_PATH: ${NATSCOPE_STORAGE_PATH:-/data/connections.json}
+      NATSCOPE_AUTH_ENABLED: "${NATSCOPE_AUTH_ENABLED:-true}"
+      NATSCOPE_AUTH_USER: "${NATSCOPE_AUTH_USER:-admin}"
+      NATSCOPE_AUTH_PASS: "${NATSCOPE_AUTH_PASS:-admin@123}"
+      NATSCOPE_DEFAULT_CONNECTION_NAME: "${NATSCOPE_DEFAULT_CONNECTION_NAME:-Docker NATS}"
+    volumes:
+      - natscope-data:/data
+    ports:
+      - "${NATSCOPE_PORT:-8080}:8080"
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  seed:
+    profiles: ["seed"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    entrypoint: ["/natscope-seed"]
+    command: ["-url", "nats://nats:4222"]
+    depends_on:
+      nats:
+        condition: service_healthy
+
+volumes:
+  nats-data:
+  natscope-data:
+
