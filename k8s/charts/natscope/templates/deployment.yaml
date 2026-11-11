@@ -69,8 +69,24 @@ spec:
       {{- if .Values.persistence.enabled }}
       volumes:
         - name: data
+          {{- if eq .Values.persistence.type "pvc" }}
           persistentVolumeClaim:
             claimName: {{ include "natscope.fullname" . }}-data
+          {{- else if eq .Values.persistence.type "existingClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim.name }}
+          {{- else if eq .Values.persistence.type "nfs" }}
+          nfs:
+            server: {{ .Values.persistence.nfs.server | quote }}
+            path: {{ .Values.persistence.nfs.path | quote }}
+            readOnly: {{ .Values.persistence.nfs.readOnly | default false }}
+          {{- else if eq .Values.persistence.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.hostPath.path | quote }}
+            type: {{ .Values.persistence.hostPath.type | default "DirectoryOrCreate" | quote }}
+          {{- else if eq .Values.persistence.type "emptyDir" }}
+          emptyDir: {}
+          {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

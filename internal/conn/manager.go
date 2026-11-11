@@ -21,6 +21,8 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+
+	"github.com/codewithnithish/natscope/internal/storage"
 )
 
 var (
@@ -73,6 +75,7 @@ type Info struct {
 type Manager struct {
 	log         *slog.Logger
 	storagePath string
+	driver      storage.Driver
 	mu          sync.RWMutex
 	entries     map[string]*Entry
 }
@@ -86,18 +89,38 @@ func NewManager(log *slog.Logger, storagePath ...string) *Manager {
 	return m
 }
 
-// Load restores persisted connection profiles from disk.
+// SetStorageDriver sets an explicit pluggable storage driver (Local, S3, NFS, etc.).
+func (m *Manager) SetStorageDriver(d storage.Driver) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.driver = d
+}
+
+// Load restores persisted connection profiles from storage.
 func (m *Manager) Load() error {
-	if m.storagePath == "" {
+	var data []byte
+	var err error
+
+	if m.driver != nil {
+		data, err = m.driver.Load(context.Background(), m.storagePath)
+		if err != nil {
+			if errors.Is(err, storage.ErrNotFound) {
+				return nil
+			}
+			return err
+		}
+	} else if m.storagePath != "" {
+		data, err = os.ReadFile(m.storagePath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+	} else {
 		return nil
 	}
-	data, err := os.ReadFile(m.storagePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
+
 	var profiles []Profile
 	if err := json.Unmarshal(data, &profiles); err != nil {
 		return err
@@ -111,7 +134,7 @@ func (m *Manager) Load() error {
 }
 
 func (m *Manager) saveLocked() {
-	if m.storagePath == "" {
+	if m.storagePath == "" && m.driver == nil {
 		return
 	}
 	profiles := make([]Profile, 0, len(m.entries))
@@ -123,6 +146,14 @@ func (m *Manager) saveLocked() {
 		m.log.Warn("failed to encode connections for persistence", "error", err)
 		return
 	}
+
+	if m.driver != nil {
+		if err := m.driver.Save(context.Background(), m.storagePath, data); err != nil {
+			m.log.Warn("failed to persist connections via driver", "driver", m.driver.Name(), "error", err)
+		}
+		return
+	}
+
 	dir := filepath.Dir(m.storagePath)
 	if dir != "" && dir != "." {
 		_ = os.MkdirAll(dir, 0755)

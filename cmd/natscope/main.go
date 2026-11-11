@@ -15,6 +15,7 @@ import (
 	"github.com/codewithnithish/natscope/internal/api"
 	"github.com/codewithnithish/natscope/internal/config"
 	"github.com/codewithnithish/natscope/internal/conn"
+	"github.com/codewithnithish/natscope/internal/storage"
 	"github.com/codewithnithish/natscope/internal/webui"
 )
 
@@ -32,7 +33,23 @@ func run() error {
 	cfg := config.FromEnv()
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel}))
 
+	storageDriver, err := storage.NewDriver(storage.Config{
+		Type:        cfg.StorageType,
+		StoragePath: cfg.StoragePath,
+		S3Endpoint:  cfg.S3Endpoint,
+		S3Bucket:    cfg.S3Bucket,
+		S3Region:    cfg.S3Region,
+		S3AccessKey: cfg.S3AccessKey,
+		S3SecretKey: cfg.S3SecretKey,
+		S3UseSSL:    cfg.S3UseSSL,
+	})
+	if err != nil {
+		log.Warn("storage driver init fallback to local", "error", err)
+		storageDriver = storage.NewLocal(cfg.StoragePath)
+	}
+
 	mgr := conn.NewManager(log, cfg.StoragePath)
+	mgr.SetStorageDriver(storageDriver)
 	defer mgr.Close()
 
 	if err := mgr.Load(); err != nil {

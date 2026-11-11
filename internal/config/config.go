@@ -23,6 +23,15 @@ type Config struct {
 	LogLevel slog.Level
 	// StoragePath is the file path where added connections are persisted.
 	StoragePath string
+	// StorageType specifies the storage provider: local, s3, nfs, pvc.
+	StorageType string
+	// S3 Configuration (Amazon S3, MinIO, Cloudflare R2, Ceph)
+	S3Endpoint  string
+	S3Bucket    string
+	S3Region    string
+	S3AccessKey string
+	S3SecretKey string
+	S3UseSSL    bool
 	// AuthEnabled turns on UI/API authentication.
 	AuthEnabled bool
 	// AuthUser is the administrative login username.
@@ -49,6 +58,13 @@ func FromEnv() Config {
 		ReadOnly:              getbool("NATSCOPE_READ_ONLY", false),
 		LogLevel:              parseLevel(getenv("NATSCOPE_LOG_LEVEL", "info")),
 		StoragePath:           getenv("NATSCOPE_STORAGE_PATH", ".data/connections.json"),
+		StorageType:           getenv("NATSCOPE_STORAGE_TYPE", "local"),
+		S3Endpoint:            getenv("NATSCOPE_S3_ENDPOINT", ""),
+		S3Bucket:              getenv("NATSCOPE_S3_BUCKET", ""),
+		S3Region:              getenv("NATSCOPE_S3_REGION", "us-east-1"),
+		S3AccessKey:           getenv("NATSCOPE_S3_ACCESS_KEY", ""),
+		S3SecretKey:           getenv("NATSCOPE_S3_SECRET_KEY", ""),
+		S3UseSSL:              getbool("NATSCOPE_S3_USE_SSL", true),
 		AuthEnabled:           getbool("NATSCOPE_AUTH_ENABLED", true),
 		AuthUser:              getenv("NATSCOPE_AUTH_USER", "admin"),
 		AuthPass:              getenv("NATSCOPE_AUTH_PASS", "admin@123"),
