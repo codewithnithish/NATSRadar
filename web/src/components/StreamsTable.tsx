@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, type ConnectionInfo } from "../api";
-import { formatBytes, formatNumber, lagLevel } from "../format";
+import { formatBytes, formatNumber, formatTime, lagLevel } from "../format";
 
 interface Props {
   connection: ConnectionInfo;
@@ -22,6 +23,8 @@ export function StreamsTable({
   onCreateStream,
 }: Props) {
   const queryClient = useQueryClient();
+  const [showBackingStreams, setShowBackingStreams] = useState(false);
+
   const streams = useQuery({
     queryKey: ["streams", connection.id],
     queryFn: () => api.streams(connection.id),
@@ -50,14 +53,47 @@ export function StreamsTable({
     }
   };
 
+  const isBackingStream = (name: string) => name.startsWith("KV_") || name.startsWith("OBJ_");
+  const allStreams = streams.data || [];
+  const backingCount = allStreams.filter((s) => isBackingStream(s.name)).length;
+  const displayedStreams = allStreams.filter(
+    (s) => showBackingStreams || !isBackingStream(s.name)
+  );
+
+  const activeStreamObj = allStreams.find((s) => s.name === selectedStream);
+
   return (
     <section className="card">
       <div className="card-head">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <h2>Streams</h2>
-          {streams.isSuccess && <span className="muted small">{streams.data.length} total</span>}
+          {streams.isSuccess && (
+            <span className="muted small">
+              {displayedStreams.length} message stream{displayedStreams.length !== 1 ? "s" : ""}
+              {backingCount > 0 && !showBackingStreams && ` (${backingCount} backing hidden)`}
+            </span>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          {backingCount > 0 && (
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                cursor: "pointer",
+              }}
+              className="muted"
+            >
+              <input
+                type="checkbox"
+                checked={showBackingStreams}
+                onChange={(e) => setShowBackingStreams(e.target.checked)}
+              />
+              Show KV & Object backing streams
+            </label>
+          )}
           {onCreateStream && !connection.readOnly && (
             <button className="btn small primary" onClick={onCreateStream}>
               + Create Stream
@@ -76,13 +112,13 @@ export function StreamsTable({
         </div>
       )}
 
-      {streams.isSuccess && streams.data.length === 0 && (
+      {streams.isSuccess && displayedStreams.length === 0 && (
         <p className="muted pad">
-          No streams yet. Run <code>make seed</code> to create demo streams or click "+ Create Stream" above.
+          No message streams found. Run <code>make seed</code> or click "+ Create Stream" above.
         </p>
       )}
 
-      {streams.isSuccess && streams.data.length > 0 && (
+      {streams.isSuccess && displayedStreams.length > 0 && (
         <div className="table-wrap">
           <table>
             <thead>
@@ -103,16 +139,36 @@ export function StreamsTable({
               </tr>
             </thead>
             <tbody>
-              {streams.data.map((s) => (
+              {displayedStreams.map((s) => (
                 <tr
                   key={s.name}
                   className={s.name === selectedStream ? "selected clickable" : "clickable"}
                   onClick={() => onSelectStream(s.name)}
                 >
                   <td>
-                    <button className="link strong" onClick={() => onSelectStream(s.name)}>
-                      {s.name}
-                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <button className="link strong" onClick={() => onSelectStream(s.name)}>
+                        {s.name}
+                      </button>
+                      {s.name.startsWith("KV_") && (
+                        <span
+                          className="pill warn"
+                          style={{ fontSize: 10, padding: "1px 5px", minWidth: 20 }}
+                          title="Key-Value Store backing stream"
+                        >
+                          KV
+                        </span>
+                      )}
+                      {s.name.startsWith("OBJ_") && (
+                        <span
+                          className="pill ok"
+                          style={{ fontSize: 10, padding: "1px 5px", minWidth: 20 }}
+                          title="Object Store backing stream"
+                        >
+                          OBJ
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     {s.subjects.map((sub) => (
@@ -202,6 +258,32 @@ export function StreamsTable({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Stream Config & Details Banner */}
+      {activeStreamObj && (
+        <div
+          style={{
+            padding: "10px 16px",
+            background: "var(--code-bg)",
+            borderTop: "1px solid var(--border)",
+            display: "flex",
+            gap: 20,
+            fontSize: 12,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+          className="muted"
+        >
+          <span>Selected: <strong>{activeStreamObj.name}</strong></span>
+          <span>Storage: <code>{activeStreamObj.storage}</code></span>
+          <span>Retention: <code>{activeStreamObj.retention}</code></span>
+          <span>Seq Range: <code>{activeStreamObj.firstSeq}–{activeStreamObj.lastSeq}</code></span>
+          {activeStreamObj.description && (
+            <span>Desc: <em>{activeStreamObj.description}</em></span>
+          )}
+          <span>Created: <strong>{formatTime(activeStreamObj.created)}</strong></span>
         </div>
       )}
     </section>
