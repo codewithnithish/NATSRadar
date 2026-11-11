@@ -1,10 +1,15 @@
 # Natscope
 
-A modern, high-performance web UI and developer management console for [NATS](https://nats.io) and JetStream.
+A modern, high-performance web UI, developer console, and observability platform for [NATS](https://nats.io) and JetStream.
 
 Think **"Kafka UI / Redis Insight, for NATS"**.
 
+[![Release](https://img.shields.io/github/v/release/codewithnithish/Natscope?logo=github&color=blue)](https://github.com/codewithnithish/Natscope/releases)
 [![CI](https://github.com/codewithnithish/Natscope/actions/workflows/ci.yml/badge.svg)](https://github.com/codewithnithish/Natscope/actions)
+[![Security Scan](https://github.com/codewithnithish/Natscope/actions/workflows/security.yml/badge.svg)](https://github.com/codewithnithish/Natscope/security/code-scanning)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fcodewithnithish%2Fnatscope-blue?logo=docker)](https://github.com/codewithnithish/Natscope/pkgs/container/natscope)
+[![Helm Chart](https://img.shields.io/badge/helm-chart-0F1689?logo=helm)](k8s/charts/natscope)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/codewithnithish/Natscope?logo=go)](go.mod)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ---
@@ -182,7 +187,7 @@ All write operations enforce the connection's `readOnly` setting. When `NATSCOPE
 
 ### Object Store
 - `GET /api/connections/{id}/objects` — List Object Store buckets
-- `POST /api/connections/{id}/objects` — Create Object Store bucket
+- `POST /api/connections/{id}/objects` — Create Object Store bucket (configurable storage type, TTL, max bytes, replicas)
 - `DELETE /api/connections/{id}/objects/{bucket}` — Delete bucket
 - `GET /api/connections/{id}/objects/{bucket}/list` — List files in bucket
 - `GET /api/connections/{id}/objects/{bucket}/get?name=...` — Download object
@@ -191,24 +196,57 @@ All write operations enforce the connection's `readOnly` setting. When `NATSCOPE
 
 ---
 
+## 💾 Multi-Storage Backend Architecture
+
+Natscope supports flexible storage driver backends for configuration persistence, audit logs, and object store exports:
+
+| Storage Provider | Configuration | Typical Deployment Scenario |
+|---|---|---|
+| **Local Disk / hostPath** | `NATSCOPE_STORAGE_DRIVER=local` (default) | Local development, single-node Docker containers |
+| **AWS S3 / MinIO / Ceph** | `NATSCOPE_STORAGE_DRIVER=s3` | Cloud-native multi-replica clusters, high durability |
+| **Kubernetes PVC / PV** | Standard Volume Mounts (`/data`) | Kubernetes Helm deployments (StatefulSet/Deployment) |
+| **NFS / Network Shares** | Volume Mounts mapped to POSIX path | Enterprise on-prem shared storage |
+
+### S3 & Object Store Environment Variables:
+```bash
+NATSCOPE_STORAGE_DRIVER=s3
+NATSCOPE_S3_ENDPOINT="s3.us-east-1.amazonaws.com"
+NATSCOPE_S3_BUCKET="my-natscope-bucket"
+NATSCOPE_S3_REGION="us-east-1"
+NATSCOPE_S3_PREFIX="natscope/"
+NATSCOPE_S3_ACCESS_KEY="AKIA..."
+NATSCOPE_S3_SECRET_KEY="secret..."
+NATSCOPE_S3_STORAGE_CLASS="STANDARD"  # GLACIER, INTELLIGENT_TIERING, etc.
+NATSCOPE_S3_TTL_DAYS=30                # Automatic object expiration
+NATSCOPE_S3_MAX_BYTES=107374182400    # Storage quota limit (e.g. 100GB)
+```
+
+---
+
 ## 🏛️ Project Architecture
 
 ```
 Natscope
 ├── cmd/
-│   ├── natscope/         # Server entrypoint (single self-contained binary)
-│   └── natscope-seed/    # Realistic demo data generator (Streams, Consumers, KV, Objects)
+│   ├── natscope/             # Server entrypoint (single self-contained binary)
+│   └── natscope-seed/        # Realistic demo data generator (Streams, Consumers, KV, Objects)
+├── docker/
+│   ├── Dockerfile            # Multi-arch distroless container image
+│   ├── docker-compose.yml    # NATS + Natscope complete local stack
+│   └── standalone.yml        # Connect to existing NATS server
+├── k8s/
+│   └── charts/natscope/      # Production Helm chart (Deployment, Service, PVC, Ingress)
 ├── internal/
-│   ├── api/              # REST API, auth middleware, SSE flusher, static UI file server
-│   ├── config/           # Environment variable configuration parser
-│   ├── conn/             # NATS connection manager with TLS/mTLS & disk persistence
-│   ├── jsx/              # JetStream service layer (streams, consumers, KV, object store)
-│   ├── testutil/         # In-process test harness for integration testing
-│   └── webui/            # Embedded React SPA build
-├── web/                  # Modern React + TypeScript + Vite SPA
-└── deploy/
-    ├── compose/          # Production-ready Docker Compose definitions
-    └── docker/           # Distroless, multi-stage Dockerfile
+│   ├── api/                  # REST API, auth middleware, SSE flusher, static UI file server
+│   ├── config/               # Environment variable configuration parser
+│   ├── conn/                 # NATS connection manager with TLS/mTLS & disk persistence
+│   ├── jsx/                  # JetStream service layer (streams, consumers, KV, object store)
+│   ├── storage/              # Multi-backend driver engine (Local, S3/MinIO, PVC, NFS)
+│   ├── testutil/             # In-process test harness for integration testing
+│   └── webui/                # Embedded React SPA build
+├── web/                      # Modern React + TypeScript + Vite SPA
+└── examples/
+    └── python-services/      # Microservice client simulations for live telemetry testing
 ```
 
 ---
