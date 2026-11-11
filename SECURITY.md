@@ -24,3 +24,4 @@ We take the security of Natscope seriously. If you discover a vulnerability, ple
 - We will acknowledge receipt of your vulnerability report within 48 hours.
 - We will keep you informed of our progress as we investigate and develop a patch.
 - We will coordinate public disclosure with you once a patch has been released.
+
