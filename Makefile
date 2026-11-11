@@ -1,10 +1,10 @@
 .DEFAULT_GOAL := help
 VERSION ?= dev
 
-.PHONY: help nats seed dev-api dev-web web build test vet fmt clean
+.PHONY: help nats seed dev-api dev-web web build test vet fmt clean docker-build docker-up docker-down helm-lint helm-package
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
 
 nats: ## Run a local NATS server with JetStream (data in .data/nats)
 	nats-server -js -sd .data/nats -m 8222
@@ -25,6 +25,21 @@ web: ## Build the React app and copy it into the Go embed directory
 
 build: web ## Build the single binary at bin/natscope
 	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/natscope ./cmd/natscope
+
+docker-build: ## Build the Natscope Docker image
+	docker build -t natscope -f docker/Dockerfile .
+
+docker-up: ## Start the full NATS + Natscope stack with Docker Compose
+	docker compose -f docker/docker-compose.yml up -d
+
+docker-down: ## Stop the Docker Compose stack
+	docker compose -f docker/docker-compose.yml down
+
+helm-lint: ## Lint the Natscope Helm Chart
+	helm lint k8s/charts/natscope
+
+helm-package: ## Package the Natscope Helm Chart
+	helm package k8s/charts/natscope -d k8s/charts/
 
 test: ## Run Go tests (starts an in-process NATS server)
 	go test ./...

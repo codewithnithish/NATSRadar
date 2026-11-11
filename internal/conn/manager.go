@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -367,33 +369,98 @@ type sysVarzData struct {
 
 // GetServerDetails queries NATS for server runtime information, cluster info, and JetStream limits.
 func (e *Entry) GetServerDetails(ctx context.Context) (*ServerDetails, error) {
+	var data sysVarzData
+	gotVarz := false
+
 	msg, err := e.NC.RequestWithContext(ctx, "$SYS.REQ.SERVER.PING.VARZ", nil)
-	if err != nil {
-		return &ServerDetails{
-			ServerID:         e.NC.ConnectedServerId(),
-			ServerName:       e.Profile.Name,
-			Version:          e.NC.ConnectedServerVersion(),
-			Host:             e.NC.ConnectedUrl(),
-			JetStreamEnabled: e.JS != nil,
-		}, nil
+	if err == nil {
+		var resp sysVarzResponse
+		if err := json.Unmarshal(msg.Data, &resp); err == nil {
+			data = resp.Data
+			if data.ServerID == "" && resp.sysVarzData.ServerID != "" {
+				data = resp.sysVarzData
+			}
+			gotVarz = true
+		}
 	}
 
-	var resp sysVarzResponse
-	if err := json.Unmarshal(msg.Data, &resp); err != nil {
-		return nil, fmt.Errorf("decode varz: %w", err)
+	// Fallback to HTTP monitoring port (e.g. port 8222) if $SYS request was unauthorized or unresponded
+	if !gotVarz {
+		if u, err := url.Parse(e.NC.ConnectedUrl()); err == nil && u.Hostname() != "" {
+			monitorURL := fmt.Sprintf("http://%s:8222/varz", u.Hostname())
+			req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, monitorURL, nil)
+			if reqErr == nil {
+				client := &http.Client{Timeout: 1500 * time.Millisecond}
+				if resp, err := client.Do(req); err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode == http.StatusOK {
+						var httpData sysVarzData
+						if err := json.NewDecoder(resp.Body).Decode(&httpData); err == nil {
+							data = httpData
+							gotVarz = true
+						}
+					}
+				}
+			}
+		}
 	}
 
-	data := resp.Data
-	if data.ServerID == "" && resp.sysVarzData.ServerID != "" {
-		data = resp.sysVarzData
+	serverID := data.ServerID
+	if serverID == "" {
+		serverID = e.NC.ConnectedServerId()
+	}
+	serverName := data.ServerName
+	if serverName == "" {
+		serverName = e.Profile.Name
+	}
+	version := data.Version
+	if version == "" {
+		version = e.NC.ConnectedServerVersion()
+	}
+	host := data.Host
+	if host == "" {
+		host = e.NC.ConnectedUrl()
+	}
+
+	jsEnabled := e.JS != nil
+	var jsMaxMem, jsMaxStorage, jsMemUsed, jsStorageUsed int64
+	var jsStoreDir string
+	if gotVarz {
+		jsMaxMem = data.JetStream.Config.MaxMemory
+		jsMaxStorage = data.JetStream.Config.MaxStorage
+		jsMemUsed = data.JetStream.Stats.Memory
+		jsStorageUsed = data.JetStream.Stats.Storage
+		jsStoreDir = data.JetStream.Config.StoreDir
+		if data.JetStream.Config.MaxStorage > 0 || data.JetStream.Config.StoreDir != "" {
+			jsEnabled = true
+		}
+	}
+
+	// Always augment or backfill JetStream storage & limits from JetStream AccountInfo
+	if e.JS != nil {
+		if acct, err := e.JS.AccountInfo(ctx); err == nil && acct != nil {
+			jsEnabled = true
+			if jsStorageUsed == 0 {
+				jsStorageUsed = int64(acct.Store)
+			}
+			if jsMemUsed == 0 {
+				jsMemUsed = int64(acct.Memory)
+			}
+			if jsMaxStorage <= 0 && acct.Limits.MaxStore > 0 {
+				jsMaxStorage = acct.Limits.MaxStore
+			}
+			if jsMaxMem <= 0 && acct.Limits.MaxMemory > 0 {
+				jsMaxMem = acct.Limits.MaxMemory
+			}
+		}
 	}
 
 	return &ServerDetails{
-		ServerID:         data.ServerID,
-		ServerName:       data.ServerName,
-		Version:          data.Version,
+		ServerID:         serverID,
+		ServerName:       serverName,
+		Version:          version,
 		GoVersion:        data.GoVersion,
-		Host:             data.Host,
+		Host:             host,
 		Port:             data.Port,
 		Uptime:           data.Uptime,
 		MemBytes:         data.Mem,
@@ -408,12 +475,12 @@ func (e *Entry) GetServerDetails(ctx context.Context) (*ServerDetails, error) {
 		OutBytes:         data.OutBytes,
 		MaxPayload:       data.MaxPayload,
 		ClusterName:      data.Cluster.Name,
-		JetStreamEnabled: data.JetStream.Config.MaxStorage > 0 || data.JetStream.Config.StoreDir != "",
-		JSMaxMemory:      data.JetStream.Config.MaxMemory,
-		JSMaxStorage:     data.JetStream.Config.MaxStorage,
-		JSMemoryUsed:     data.JetStream.Stats.Memory,
-		JSStorageUsed:    data.JetStream.Stats.Storage,
-		JSStoreDir:       data.JetStream.Config.StoreDir,
+		JetStreamEnabled: jsEnabled,
+		JSMaxMemory:      jsMaxMem,
+		JSMaxStorage:     jsMaxStorage,
+		JSMemoryUsed:     jsMemUsed,
+		JSStorageUsed:    jsStorageUsed,
+		JSStoreDir:       jsStoreDir,
 	}, nil
 }
 

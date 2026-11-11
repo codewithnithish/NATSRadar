@@ -33,6 +33,8 @@ export default function App() {
     undefined,
   );
   const [clientsSubject, setClientsSubject] = useState<string | null>(null);
+  const [showClientsPanel, setShowClientsPanel] = useState(true);
+  const [showLiveTailPanel, setShowLiveTailPanel] = useState(true);
   const [creatingStream, setCreatingStream] = useState(false);
 
   // Theme Switcher
@@ -170,7 +172,11 @@ export default function App() {
               </button>
               <button
                 className={`nav-tab ${activeTab === "core" ? "active" : ""}`}
-                onClick={() => setActiveTab("core")}
+                onClick={() => {
+                  setShowClientsPanel(true);
+                  setShowLiveTailPanel(true);
+                  setActiveTab("core");
+                }}
               >
                 📡 Core NATS & Clients
               </button>
@@ -214,10 +220,12 @@ export default function App() {
                   onBrowseStream={setBrowseStream}
                   onTailSubject={(sub) => {
                     setTailSubject(sub);
+                    setShowLiveTailPanel(true);
                     setActiveTab("core");
                   }}
                   onViewClients={(sub) => {
                     setClientsSubject(sub);
+                    setShowClientsPanel(true);
                     setActiveTab("core");
                   }}
                   onCreateStream={() => setCreatingStream(true)}
@@ -255,16 +263,52 @@ export default function App() {
 
             {activeTab === "core" && (
               <>
-                <ClientsPanel
-                  connectionId={current.id}
-                  initialSubject={clientsSubject || ""}
-                  onClose={() => setClientsSubject(null)}
-                />
-                <LiveTailPanel
-                  connectionId={current.id}
-                  initialSubject={tailSubject || ">"}
-                  onClose={() => setTailSubject(null)}
-                />
+                {(!showClientsPanel || !showLiveTailPanel) && (
+                  <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                    {!showClientsPanel && (
+                      <button
+                        className="btn small"
+                        onClick={() => setShowClientsPanel(true)}
+                      >
+                        + Show Connected Clients
+                      </button>
+                    )}
+                    {!showLiveTailPanel && (
+                      <button
+                        className="btn small"
+                        onClick={() => setShowLiveTailPanel(true)}
+                      >
+                        + Show Live Subject Tailing
+                      </button>
+                    )}
+                  </div>
+                )}
+                {showClientsPanel && (
+                  <ClientsPanel
+                    connectionId={current.id}
+                    initialSubject={clientsSubject || ""}
+                    onClose={() => {
+                      setClientsSubject(null);
+                      setShowClientsPanel(false);
+                      if (!showLiveTailPanel) {
+                        setActiveTab("jetstream");
+                      }
+                    }}
+                  />
+                )}
+                {showLiveTailPanel && (
+                  <LiveTailPanel
+                    connectionId={current.id}
+                    initialSubject={tailSubject || ">"}
+                    onClose={() => {
+                      setTailSubject(null);
+                      setShowLiveTailPanel(false);
+                      if (!showClientsPanel) {
+                        setActiveTab("jetstream");
+                      }
+                    }}
+                  />
+                )}
               </>
             )}
 
@@ -278,6 +322,7 @@ export default function App() {
                   setPublisherSubject(null);
                   setPublisherPayload(undefined);
                   setPublisherHeaders(undefined);
+                  setActiveTab("jetstream");
                 }}
               />
             )}

@@ -33,8 +33,17 @@ type Config struct {
 
 // FromEnv reads configuration from the environment, applying defaults.
 func FromEnv() Config {
+	addr := getenv("NATSCOPE_ADDR", "")
+	if addr == "" {
+		if p, ok := os.LookupEnv("PORT"); ok && p != "" {
+			addr = ":" + p
+		} else {
+			addr = ":8080"
+		}
+	}
+
 	return Config{
-		Addr:                  getenv("NATSCOPE_ADDR", ":8080"),
+		Addr:                  addr,
 		NATSURL:               getenv("NATS_URL", "nats://127.0.0.1:4222"),
 		DefaultConnectionName: getenv("NATSCOPE_DEFAULT_CONNECTION_NAME", "default"),
 		ReadOnly:              getbool("NATSCOPE_READ_ONLY", false),

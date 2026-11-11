@@ -30,11 +30,14 @@ export function ServerPanel({ connection }: Props) {
   }
 
   const s = server.data;
-  const memPct = s.jsMaxMemory && s.jsMaxMemory > 0 && s.jsMemoryUsed
-    ? Math.round((s.jsMemoryUsed / s.jsMaxMemory) * 100)
+  const hasStorageLimit = s.jsMaxStorage && s.jsMaxStorage > 0;
+  const hasMemoryLimit = s.jsMaxMemory && s.jsMaxMemory > 0;
+
+  const storagePct = hasStorageLimit && s.jsStorageUsed
+    ? Math.round((s.jsStorageUsed / s.jsMaxStorage!) * 100)
     : 0;
-  const storagePct = s.jsMaxStorage && s.jsMaxStorage > 0 && s.jsStorageUsed
-    ? Math.round((s.jsStorageUsed / s.jsMaxStorage) * 100)
+  const memPct = hasMemoryLimit && s.jsMemoryUsed
+    ? Math.round((s.jsMemoryUsed / s.jsMaxMemory!) * 100)
     : 0;
 
   return (
@@ -91,11 +94,14 @@ export function ServerPanel({ connection }: Props) {
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span className="small"><strong>File Storage Used</strong></span>
                 <span className="small muted">
-                  {formatBytes(s.jsStorageUsed ?? 0)} / {formatBytes(s.jsMaxStorage ?? 0)} ({storagePct}%)
+                  {formatBytes(s.jsStorageUsed ?? 0)} / {hasStorageLimit ? `${formatBytes(s.jsMaxStorage!)} (${storagePct}%)` : "Unlimited"}
                 </span>
               </div>
               <div className="meter-bar">
-                <div className="meter-fill" style={{ width: `${Math.min(storagePct, 100)}%` }} />
+                <div
+                  className="meter-fill"
+                  style={{ width: `${hasStorageLimit ? Math.min(storagePct, 100) : (s.jsStorageUsed ? 100 : 0)}%` }}
+                />
               </div>
             </div>
 
@@ -103,11 +109,14 @@ export function ServerPanel({ connection }: Props) {
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span className="small"><strong>Memory Storage Used</strong></span>
                 <span className="small muted">
-                  {formatBytes(s.jsMemoryUsed ?? 0)} / {formatBytes(s.jsMaxMemory ?? 0)} ({memPct}%)
+                  {formatBytes(s.jsMemoryUsed ?? 0)} / {hasMemoryLimit ? `${formatBytes(s.jsMaxMemory!)} (${memPct}%)` : "Unlimited"}
                 </span>
               </div>
               <div className="meter-bar">
-                <div className="meter-fill" style={{ width: `${Math.min(memPct, 100)}%` }} />
+                <div
+                  className="meter-fill"
+                  style={{ width: `${hasMemoryLimit ? Math.min(memPct, 100) : (s.jsMemoryUsed ? 100 : 0)}%` }}
+                />
               </div>
             </div>
 
