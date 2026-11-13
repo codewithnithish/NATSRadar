@@ -1,4 +1,4 @@
-// Package conn manages the NATS connections Natscope is pointed at.
+// Package conn manages the NATS connections NATSRadar is pointed at.
 package conn
 
 import (
@@ -22,7 +22,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	"github.com/codewithnithish/natscope/internal/storage"
+	"github.com/codewithnithish/natsradar/internal/storage"
 )
 
 var (
@@ -189,7 +189,7 @@ func (m *Manager) Add(p Profile) (*Entry, error) {
 
 	id := p.ID
 	opts := []nats.Option{
-		nats.Name("natscope"),
+		nats.Name("natsradar"),
 		nats.Timeout(5 * time.Second),
 		nats.MaxReconnects(-1),
 		nats.ReconnectWait(2 * time.Second),
@@ -595,7 +595,9 @@ func (e *Entry) ListClients(ctx context.Context, subjectFilter string) ([]Client
 			name = fmt.Sprintf("%s:%d", c.IP, c.Port)
 		}
 
-		isInternal := strings.EqualFold(c.Name, "natscope") || strings.HasPrefix(strings.ToLower(c.Name), "natscope-")
+		lowerName := strings.ToLower(c.Name)
+		isInternal := lowerName == "natsradar" || lowerName == "natscope" ||
+			strings.HasPrefix(lowerName, "natsradar-") || strings.HasPrefix(lowerName, "natscope-")
 		kind := "client"
 		if isInternal {
 			kind = "internal"

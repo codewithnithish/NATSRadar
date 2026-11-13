@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "natscope.name" -}}
+{{- define "natsradar.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "natscope.fullname" -}}
+{{- define "natsradar.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "natscope.chart" -}}
+{{- define "natsradar.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "natscope.labels" -}}
-helm.sh/chart: {{ include "natscope.chart" . }}
-{{ include "natscope.selectorLabels" . }}
+{{- define "natsradar.labels" -}}
+helm.sh/chart: {{ include "natsradar.chart" . }}
+{{ include "natsradar.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "natscope.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "natscope.name" . }}
+{{- define "natsradar.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "natsradar.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "natscope.serviceAccountName" -}}
+{{- define "natsradar.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "natscope.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "natsradar.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -64,11 +64,11 @@ Create the name of the service account to use
 {{/*
 Return the name of the secret containing credentials
 */}}
-{{- define "natscope.secretName" -}}
-{{- if .Values.natscope.auth.existingSecret }}
-{{- .Values.natscope.auth.existingSecret }}
+{{- define "natsradar.secretName" -}}
+{{- if or .Values.natsradar.auth.existingSecret (and .Values.natscope .Values.natscope.auth.existingSecret) }}
+{{- default .Values.natscope.auth.existingSecret .Values.natsradar.auth.existingSecret }}
 {{- else }}
-{{- include "natscope.fullname" . }}
+{{- include "natsradar.fullname" . }}
 {{- end }}
 {{- end }}
 

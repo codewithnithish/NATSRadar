@@ -1,6 +1,6 @@
 # Cloud-to-Edge Hybrid Architecture with NATS Leaf Nodes
 
-This document details the enterprise hybrid-cloud architecture pattern using **NATS Leaf Nodes**, connecting private on-premises edge networks (retail stores, factory floors, branch offices, IoT gateways) to a central cloud cluster (AWS / GCP / Azure / Kubernetes), observed and managed by **Natscope**.
+This document details the enterprise hybrid-cloud architecture pattern using **NATS Leaf Nodes**, connecting private on-premises edge networks (retail stores, factory floors, branch offices, IoT gateways) to a central cloud cluster (AWS / GCP / Azure / Kubernetes), observed and managed by **NATSRadar**.
 
 ---
 
@@ -11,7 +11,7 @@ flowchart TD
     subgraph CloudVPC["☁️ Central Cloud Infrastructure (AWS / GCP / Azure / Kubernetes)"]
         direction TB
 
-        Natscope["🖥️ Natscope UI & Observability Console<br/>(Port: 8080)"]
+        NATSRadar["🖥️ NATSRadar UI & Observability Console<br/>(Port: 8080)"]
         
         subgraph CentralNATS["Central NATS Cluster (JetStream Hub)"]
             HubNATS["NATS Core & JetStream Engine<br/>Client: 4222 | Monitoring: 8222 | Leaf Listener: 7422"]
@@ -25,7 +25,7 @@ flowchart TD
             S3Storage[("🗄️ Cloud Storage / AWS S3<br/>Object Store Archive")]
         end
 
-        Natscope -.->|"Query Metrics & Telemetry"| HubNATS
+        NATSRadar -.->|"Query Metrics & Telemetry"| HubNATS
         CloudServices <-->|"Pub / Sub & Req-Reply"| HubNATS
         HubNATS <--> CloudStreams
         HubNATS <--> CloudKV
@@ -93,12 +93,12 @@ sequenceDiagram
     participant Leaf as 🌿 Private Edge Leaf Node
     participant Hub as ☁️ Central Cloud NATS Hub
     participant CloudApp as 💳 Cloud Microservice / DB
-    participant Natscope as 🖥️ Natscope Console
+    participant NATSRadar as 🖥️ NATSRadar Console
 
     Note over Leaf,Hub: 1. Outbound TLS Handshake across Edge Firewall
     Leaf->>Hub: Connect out to nats://cloud-nats:7422 (mTLS / NKey Auth)
     Hub-->>Leaf: Connection Accepted (Account: $G, Bridged)
-    Hub->>Natscope: Emits Leafnode Metric (RTT: 4ms, Name: edge-store-01)
+    Hub->>NATSRadar: Emits Leafnode Metric (RTT: 4ms, Name: edge-store-01)
 
     Note over Client,Leaf: 2. Local Edge Publishing (Zero Network Latency)
     Client->>Leaf: Publish order.created {id: 101, total: 45.00}
@@ -107,18 +107,18 @@ sequenceDiagram
     Note over Leaf,Hub: 3. Transparent Subject Bridging
     Leaf->>Hub: Transparently syncs order.created to Central Hub
     Hub->>CloudApp: Delivers order.created to Cloud Consumers
-    Hub->>Natscope: Telemetry counters increment (+1 in/out)
+    Hub->>NATSRadar: Telemetry counters increment (+1 in/out)
 
     Note over Leaf,Hub: 4. Offline Scenario (WAN Cable Cut)
     Hub-xLeaf: Internet Connection Lost
     Client->>Leaf: Publish order.created {id: 102} (Stored locally in JetStream)
     Leaf-->>Client: Local ACK (Store operations never blocked)
-    Natscope->>Natscope: Displays Leaf Node Status: Disconnected
+    NATSRadar->>NATSRadar: Displays Leaf Node Status: Disconnected
 
     Note over Leaf,Hub: 5. WAN Restored & Auto-Catchup
     Leaf->>Hub: Auto-Reconnects & flushes buffered stream backlog
     Hub->>CloudApp: Receives queued messages in sequence
-    Natscope->>Natscope: Status turns GREEN (RTT: 4ms, 1 Active Leaf)
+    NATSRadar->>NATSRadar: Status turns GREEN (RTT: 4ms, 1 Active Leaf)
 ```
 
 ---
@@ -190,9 +190,9 @@ leafnodes {
 
 ---
 
-## 🔍 Observability in Natscope
+## 🔍 Observability in NATSRadar
 
-Natscope gives cloud and DevOps teams full visibility into the state of private leaf nodes without needing direct access to the edge local network:
+NATSRadar gives cloud and DevOps teams full visibility into the state of private leaf nodes without needing direct access to the edge local network:
 
 1. **🌿 Connected Leaf Nodes Dashboard (`📡 Core NATS & Clients`)**:
    - **Name & Edge Identifier**: View which branch or factory is currently connected.

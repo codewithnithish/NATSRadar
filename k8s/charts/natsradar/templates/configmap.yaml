@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "natsradar.fullname" . }}
+  labels:
+    {{- include "natsradar.labels" . | nindent 4 }}
+data:
+  NATS_URL: {{ .Values.natsradar.natsUrl | quote }}
+  NATSRADAR_DEFAULT_CONNECTION_NAME: {{ .Values.natsradar.defaultConnectionName | quote }}
+  NATSRADAR_READ_ONLY: {{ .Values.natsradar.readOnly | quote }}
+  NATSRADAR_LOG_LEVEL: {{ .Values.natsradar.logLevel | quote }}
+  NATSRADAR_AUTH_ENABLED: {{ .Values.natsradar.auth.enabled | quote }}
+  {{- if .Values.natsradar.s3.enabled }}
+  NATSRADAR_STORAGE_TYPE: "s3"
+  NATSRADAR_S3_ENDPOINT: {{ .Values.natsradar.s3.endpoint | quote }}
+  NATSRADAR_S3_BUCKET: {{ .Values.natsradar.s3.bucket | quote }}
+  NATSRADAR_S3_PREFIX: {{ .Values.natsradar.s3.prefix | quote }}
+  NATSRADAR_S3_REGION: {{ .Values.natsradar.s3.region | quote }}
+  NATSRADAR_S3_USE_SSL: {{ .Values.natsradar.s3.useSSL | quote }}
+  NATSRADAR_S3_STORAGE_CLASS: {{ .Values.natsradar.s3.storageClass | default "STANDARD" | quote }}
+  NATSRADAR_S3_TTL_DAYS: {{ .Values.natsradar.s3.ttlDays | default 0 | quote }}
+  NATSRADAR_S3_MAX_BYTES: {{ .Values.natsradar.s3.maxBytes | default 0 | quote }}
+  {{- end }}
+  {{- if .Values.persistence.enabled }}
+  NATSRADAR_STORAGE_PATH: "{{ .Values.persistence.mountPath }}/connections.json"
+  {{- end }}
+

@@ -1,6 +1,6 @@
-# Contributing to Natscope
+# Contributing to NATSRadar
 
-Thanks for helping. Natscope is a small project, so the process is light.
+Thanks for helping. NATSRadar is an open-source project, and contributions are warmly welcome!
 
 ## Setup
 

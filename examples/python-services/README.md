@@ -1,4 +1,4 @@
-# Python Microservices with NATS & Natscope
+# Python Microservices with NATS & NATSRadar
 
 This folder demonstrates testing all primary NATS communication patterns between two services:
 
@@ -38,7 +38,7 @@ python3 service_sender.py
 
 ---
 
-## Verifying in Natscope Web UI (http://localhost:8080)
+## Verifying in NATSRadar Web UI (http://localhost:8080)
 
 1. **Core NATS & Clients tab**:
    - See active connected clients (`Service-1` and `Service-2`).

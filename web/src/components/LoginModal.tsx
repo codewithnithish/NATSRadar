@@ -30,7 +30,7 @@ export function LoginModal({ onSuccess }: Props) {
       <div className="login-card">
         <div style={{ textAlign: "center", padding: "32px 24px 20px 24px", borderBottom: "1px solid var(--border)" }}>
           <div style={{ fontSize: 36, color: "var(--accent)", lineHeight: 1, marginBottom: 10 }}>◈</div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Natscope</h1>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>NATSRadar</h1>
           <p className="muted small" style={{ margin: "6px 0 0 0" }}>Sign in to manage your NATS cluster</p>
         </div>
 
@@ -75,7 +75,7 @@ export function LoginModal({ onSuccess }: Props) {
           >
             Default credentials: <strong>admin</strong> / <strong>admin@123</strong>
             <br />
-            Configurable via <code>NATSCOPE_AUTH_USER</code> & <code>NATSCOPE_AUTH_PASS</code>.
+            Configurable via <code>NATSRADAR_AUTH_USER</code> & <code>NATSRADAR_AUTH_PASS</code>.
           </div> */}
 
           <button

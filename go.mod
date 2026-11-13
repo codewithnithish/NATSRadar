@@ -1,4 +1,4 @@
-module github.com/codewithnithish/natscope
+module github.com/codewithnithish/natsradar
 
 go 1.26.0
 

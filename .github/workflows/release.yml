@@ -56,16 +56,16 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Compile Natscope Binary
+      - name: Compile NATSRadar Binary
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 0
         run: |
           VERSION=${GITHUB_REF_NAME}
-          OUT_NAME="natscope-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
+          OUT_NAME="natsradar-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           mkdir -p dist
-          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o dist/${OUT_NAME}${{ matrix.ext }} ./cmd/natscope
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o dist/${OUT_NAME}${{ matrix.ext }} ./cmd/natsradar
           cd dist
           if [ "${{ matrix.os }}" = "windows" ]; then
             zip ${OUT_NAME}.zip ${OUT_NAME}${{ matrix.ext }}

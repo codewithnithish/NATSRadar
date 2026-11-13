@@ -1,4 +1,4 @@
-# Full Stack: NATS (JetStream on) + Natscope
+# Full Stack: NATS (JetStream on) + NATSRadar
 # Usage:
 #   docker compose -f docker/docker-compose.yml up -d
 #   docker compose -f docker/docker-compose.yml --profile seed run --rm seed
@@ -22,22 +22,22 @@ services:
       timeout: 3s
       retries: 10
 
-  natscope:
+  natsradar:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: natscope-ui
+    container_name: natsradar-ui
     environment:
       NATS_URL: ${NATS_URL:-nats://nats:4222}
-      NATSCOPE_STORAGE_PATH: ${NATSCOPE_STORAGE_PATH:-/data/connections.json}
-      NATSCOPE_AUTH_ENABLED: "${NATSCOPE_AUTH_ENABLED:-true}"
-      NATSCOPE_AUTH_USER: "${NATSCOPE_AUTH_USER:-admin}"
-      NATSCOPE_AUTH_PASS: "${NATSCOPE_AUTH_PASS:-admin@123}"
-      NATSCOPE_DEFAULT_CONNECTION_NAME: "${NATSCOPE_DEFAULT_CONNECTION_NAME:-Docker NATS}"
+      NATSRADAR_STORAGE_PATH: ${NATSRADAR_STORAGE_PATH:-/data/connections.json}
+      NATSRADAR_AUTH_ENABLED: "${NATSRADAR_AUTH_ENABLED:-true}"
+      NATSRADAR_AUTH_USER: "${NATSRADAR_AUTH_USER:-admin}"
+      NATSRADAR_AUTH_PASS: "${NATSRADAR_AUTH_PASS:-admin@123}"
+      NATSRADAR_DEFAULT_CONNECTION_NAME: "${NATSRADAR_DEFAULT_CONNECTION_NAME:-Docker NATS}"
     volumes:
-      - natscope-data:/data
+      - natsradar-data:/data
     ports:
-      - "${NATSCOPE_PORT:-8080}:8080"
+      - "${NATSRADAR_PORT:-${NATSCOPE_PORT:-8080}}:8080"
     depends_on:
       nats:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    entrypoint: ["/natscope-seed"]
+    entrypoint: ["/natsradar-seed"]
     command: ["-url", "nats://nats:4222"]
     depends_on:
       nats:
@@ -68,5 +68,5 @@ services:
 
 volumes:
   nats-data:
-  natscope-data:
+  natsradar-data:
 

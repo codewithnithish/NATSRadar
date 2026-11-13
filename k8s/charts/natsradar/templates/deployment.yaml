@@ -1,32 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "natscope.fullname" . }}
+  name: {{ include "natsradar.fullname" . }}
   labels:
-    {{- include "natscope.labels" . | nindent 4 }}
+    {{- include "natsradar.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "natscope.selectorLabels" . | nindent 6 }}
+      {{- include "natsradar.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- if and .Values.natscope.auth.enabled (not .Values.natscope.auth.existingSecret) }}
+        {{- if and .Values.natsradar.auth.enabled (not .Values.natsradar.auth.existingSecret) }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "natscope.selectorLabels" . | nindent 8 }}
+        {{- include "natsradar.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "natscope.serviceAccountName" . }}
+      serviceAccountName: {{ include "natsradar.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -41,31 +41,31 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: {{ include "natscope.fullname" . }}
-          {{- if .Values.natscope.auth.enabled }}
+                name: {{ include "natsradar.fullname" . }}
+          {{- if .Values.natsradar.auth.enabled }}
           env:
-            - name: NATSCOPE_AUTH_USER
+            - name: NATSRADAR_AUTH_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "natscope.secretName" . }}
-                  key: {{ .Values.natscope.auth.userKey | default "NATSCOPE_AUTH_USER" }}
-            - name: NATSCOPE_AUTH_PASS
+                  name: {{ include "natsradar.secretName" . }}
+                  key: {{ .Values.natsradar.auth.userKey | default "NATSRADAR_AUTH_USER" }}
+            - name: NATSRADAR_AUTH_PASS
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "natscope.secretName" . }}
-                  key: {{ .Values.natscope.auth.passwordKey | default "NATSCOPE_AUTH_PASS" }}
+                  name: {{ include "natsradar.secretName" . }}
+                  key: {{ .Values.natsradar.auth.passwordKey | default "NATSRADAR_AUTH_PASS" }}
           {{- end }}
-          {{- if and .Values.natscope.s3.enabled .Values.natscope.s3.existingSecret }}
-            - name: NATSCOPE_S3_ACCESS_KEY
+          {{- if and .Values.natsradar.s3.enabled .Values.natsradar.s3.existingSecret }}
+            - name: NATSRADAR_S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.natscope.s3.existingSecret }}
-                  key: {{ .Values.natscope.s3.accessKeyKey | default "AWS_ACCESS_KEY_ID" }}
-            - name: NATSCOPE_S3_SECRET_KEY
+                  name: {{ .Values.natsradar.s3.existingSecret }}
+                  key: {{ .Values.natsradar.s3.accessKeyKey | default "AWS_ACCESS_KEY_ID" }}
+            - name: NATSRADAR_S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.natscope.s3.existingSecret }}
-                  key: {{ .Values.natscope.s3.secretKeyKey | default "AWS_SECRET_ACCESS_KEY" }}
+                  name: {{ .Values.natsradar.s3.existingSecret }}
+                  key: {{ .Values.natsradar.s3.secretKeyKey | default "AWS_SECRET_ACCESS_KEY" }}
           {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
@@ -83,7 +83,7 @@ spec:
         - name: data
           {{- if eq .Values.persistence.type "pvc" }}
           persistentVolumeClaim:
-            claimName: {{ include "natscope.fullname" . }}-data
+            claimName: {{ include "natsradar.fullname" . }}-data
           {{- else if eq .Values.persistence.type "existingClaim" }}
           persistentVolumeClaim:
             claimName: {{ .Values.persistence.existingClaim.name }}

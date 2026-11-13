@@ -1,0 +1,20 @@
+apiVersion: v2
+name: natsradar
+description: A Helm chart for NATSRadar - Visual Management, Monitoring and Observability Platform for NATS and JetStream
+type: application
+version: 0.1.0
+appVersion: "1.1.0"
+keywords:
+  - nats
+  - jetstream
+  - observability
+  - dashboard
+  - ui
+  - kubernetes
+home: https://github.com/codewithnithish/NATSRadar
+sources:
+  - https://github.com/codewithnithish/NATSRadar
+maintainers:
+  - name: codewithnithish
+    url: https://github.com/codewithnithish
+

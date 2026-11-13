@@ -26,11 +26,17 @@ export function ClientsPanel({ connectionId, initialSubject = "", onClose }: Pro
     setActiveSubject(subjectFilter.trim());
   };
 
-  const isClientInternal = (c: ClientInfo) =>
-    c.isInternal ||
-    c.kind === "internal" ||
-    c.name.toLowerCase() === "natscope" ||
-    c.name.toLowerCase().startsWith("natscope-");
+  const isClientInternal = (c: ClientInfo) => {
+    const lower = c.name.toLowerCase();
+    return (
+      c.isInternal ||
+      c.kind === "internal" ||
+      lower === "natsradar" ||
+      lower === "natscope" ||
+      lower.startsWith("natsradar-") ||
+      lower.startsWith("natscope-")
+    );
+  };
 
   const totalClients = clients.data?.length ?? 0;
   const internalCount = (clients.data ?? []).filter(isClientInternal).length;
@@ -100,10 +106,10 @@ export function ClientsPanel({ connectionId, initialSubject = "", onClose }: Pro
               type="button"
               className={`btn small ${showInternal ? "active" : ""}`}
               onClick={() => setShowInternal(!showInternal)}
-              title={showInternal ? "Hide Natscope internal connection" : "Show Natscope internal connection"}
+              title={showInternal ? "Hide internal system connections" : "Show internal system connections"}
               style={{ display: "flex", alignItems: "center", gap: 6 }}
             >
-              <span>{showInternal ? "👁️ Hide Internal (Natscope)" : "👁️ Show Internal (Natscope)"}</span>
+              <span>{showInternal ? "👁️ Hide Internal (NATSRadar)" : "👁️ Show Internal (NATSRadar)"}</span>
               <span className="pill muted" style={{ fontSize: 10, padding: "1px 5px" }}>{internalCount}</span>
             </button>
           )}

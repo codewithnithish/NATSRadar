@@ -1,4 +1,4 @@
-// Command natscope serves the Natscope web UI and API.
+// Command natsradar serves the NatsRadar web UI and API.
 package main
 
 import (
@@ -12,11 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/codewithnithish/natscope/internal/api"
-	"github.com/codewithnithish/natscope/internal/config"
-	"github.com/codewithnithish/natscope/internal/conn"
-	"github.com/codewithnithish/natscope/internal/storage"
-	"github.com/codewithnithish/natscope/internal/webui"
+	"github.com/codewithnithish/natsradar/internal/api"
+	"github.com/codewithnithish/natsradar/internal/config"
+	"github.com/codewithnithish/natsradar/internal/conn"
+	"github.com/codewithnithish/natsradar/internal/storage"
+	"github.com/codewithnithish/natsradar/internal/webui"
 )
 
 // version is set at build time: -ldflags "-X main.version=1.2.3".
@@ -24,7 +24,7 @@ var version = "dev"
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, "natscope:", err)
+		fmt.Fprintln(os.Stderr, "natsradar:", err)
 		os.Exit(1)
 	}
 }
@@ -91,7 +91,7 @@ func run() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("natscope listening", "addr", cfg.Addr, "version", version)
+		log.Info("natsradar listening", "addr", cfg.Addr, "version", version)
 		errCh <- srv.ListenAndServe()
 	}()
 

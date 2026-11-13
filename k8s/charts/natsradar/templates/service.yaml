@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "natscope.fullname" . }}
+  name: {{ include "natsradar.fullname" . }}
   labels:
-    {{- include "natscope.labels" . | nindent 4 }}
+    {{- include "natsradar.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,5 +12,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "natscope.selectorLabels" . | nindent 4 }}
+    {{- include "natsradar.selectorLabels" . | nindent 4 }}
 

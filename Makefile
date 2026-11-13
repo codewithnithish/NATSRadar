@@ -10,10 +10,10 @@ nats: ## Run a local NATS server with JetStream (data in .data/nats)
 	nats-server -js -sd .data/nats -m 8222
 
 seed: ## Create demo streams, consumers, KV stores and Object stores on local NATS
-	go run ./cmd/natscope-seed
+	go run ./cmd/natsradar-seed
 
 dev-api: ## Run the Go server on :8080 (serves the last built UI)
-	go run ./cmd/natscope
+	go run ./cmd/natsradar
 
 dev-web: ## Run the React dev server on :5173 (proxies /api to :8080)
 	cd web && npm install && npm run dev
@@ -23,23 +23,23 @@ web: ## Build the React app and copy it into the Go embed directory
 	find internal/webui/dist -mindepth 1 ! -name .gitkeep -delete
 	cp -R web/dist/. internal/webui/dist/
 
-build: web ## Build the single binary at bin/natscope
-	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/natscope ./cmd/natscope
+build: web ## Build the single binary at bin/natsradar
+	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/natsradar ./cmd/natsradar
 
-docker-build: ## Build the Natscope Docker image
-	docker build -t natscope -f docker/Dockerfile .
+docker-build: ## Build the NATSRadar Docker image
+	docker build -t natsradar -f docker/Dockerfile .
 
-docker-up: ## Start the full NATS + Natscope stack with Docker Compose
+docker-up: ## Start the full NATS + NATSRadar stack with Docker Compose
 	docker compose -f docker/docker-compose.yml up -d
 
 docker-down: ## Stop the Docker Compose stack
 	docker compose -f docker/docker-compose.yml down
 
-helm-lint: ## Lint the Natscope Helm Chart
-	helm lint k8s/charts/natscope
+helm-lint: ## Lint the NATSRadar Helm Chart
+	helm lint k8s/charts/natsradar
 
-helm-package: ## Package the Natscope Helm Chart
-	helm package k8s/charts/natscope -d k8s/charts/
+helm-package: ## Package the NATSRadar Helm Chart
+	helm package k8s/charts/natsradar -d k8s/charts/
 
 test: ## Run Go tests (starts an in-process NATS server)
 	go test ./...
