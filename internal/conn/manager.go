@@ -350,6 +350,7 @@ type ServerDetails struct {
 	OutBytes         int64   `json:"outBytes"`
 	MaxPayload       int     `json:"maxPayload"`
 	ClusterName      string  `json:"clusterName,omitempty"`
+	LeafNodes        int     `json:"leafNodes"`
 	JetStreamEnabled bool    `json:"jetStreamEnabled"`
 	JSMaxMemory      int64   `json:"jsMaxMemory,omitempty"`
 	JSMaxStorage     int64   `json:"jsMaxStorage,omitempty"`
@@ -382,6 +383,7 @@ type sysVarzData struct {
 	InBytes          int64   `json:"in_bytes"`
 	OutBytes         int64   `json:"out_bytes"`
 	MaxPayload       int     `json:"max_payload"`
+	LeafNodes        int     `json:"leafnodes"`
 	Cluster          struct {
 		Name string `json:"name"`
 	} `json:"cluster"`
@@ -506,6 +508,7 @@ func (e *Entry) GetServerDetails(ctx context.Context) (*ServerDetails, error) {
 		OutBytes:         data.OutBytes,
 		MaxPayload:       data.MaxPayload,
 		ClusterName:      data.Cluster.Name,
+		LeafNodes:        data.LeafNodes,
 		JetStreamEnabled: jsEnabled,
 		JSMaxMemory:      jsMaxMem,
 		JSMaxStorage:     jsMaxStorage,
@@ -530,6 +533,8 @@ type ClientInfo struct {
 	OutBytes              int64    `json:"outBytes"`
 	Subscriptions         []string `json:"subscriptions"`
 	MatchingSubscriptions []string `json:"matchingSubscriptions,omitempty"`
+	IsInternal            bool     `json:"isInternal"`
+	Kind                  string   `json:"kind"` // "internal" | "client"
 }
 
 type sysConnzResponse struct {
@@ -590,6 +595,12 @@ func (e *Entry) ListClients(ctx context.Context, subjectFilter string) ([]Client
 			name = fmt.Sprintf("%s:%d", c.IP, c.Port)
 		}
 
+		isInternal := strings.EqualFold(c.Name, "natscope") || strings.HasPrefix(strings.ToLower(c.Name), "natscope-")
+		kind := "client"
+		if isInternal {
+			kind = "internal"
+		}
+
 		clients = append(clients, ClientInfo{
 			CID:                   c.CID,
 			Name:                  name,
@@ -604,6 +615,8 @@ func (e *Entry) ListClients(ctx context.Context, subjectFilter string) ([]Client
 			OutBytes:              c.OutBytes,
 			Subscriptions:         subs,
 			MatchingSubscriptions: matching,
+			IsInternal:            isInternal,
+			Kind:                  kind,
 		})
 	}
 
@@ -612,6 +625,135 @@ func (e *Entry) ListClients(ctx context.Context, subjectFilter string) ([]Client
 	})
 
 	return clients, nil
+}
+
+// LeafNodeInfo describes a connected leaf node edge server.
+type LeafNodeInfo struct {
+	Account       string `json:"account"`
+	IP            string `json:"ip"`
+	Port          int    `json:"port"`
+	Name          string `json:"name"`
+	RTT           string `json:"rtt,omitempty"`
+	InMsgs        int64  `json:"inMsgs"`
+	OutMsgs       int64  `json:"outMsgs"`
+	InBytes       int64  `json:"inBytes"`
+	OutBytes      int64  `json:"outBytes"`
+	Subscriptions uint32 `json:"subscriptions"`
+	IsSpoke       bool   `json:"isSpoke"`
+}
+
+// LeafNodesSummary is the aggregate overview of all connected edge leaf nodes.
+type LeafNodesSummary struct {
+	ServerID string         `json:"serverId"`
+	Count    int            `json:"count"`
+	Leafs    []LeafNodeInfo `json:"leafs"`
+}
+
+type sysLeafzResponse struct {
+	Data sysLeafzData `json:"data"`
+	sysLeafzData
+}
+
+type sysLeafzData struct {
+	ServerID     string    `json:"server_id"`
+	NumLeafnodes int       `json:"num_leafnodes"`
+	Leafs        []sysLeaf `json:"leafs"`
+}
+
+type sysLeaf struct {
+	Account       string `json:"account"`
+	IP            string `json:"ip"`
+	Port          int    `json:"port"`
+	Name          string `json:"name"`
+	RTT           string `json:"rtt"`
+	InMsgs        int64  `json:"in_msgs"`
+	OutMsgs       int64  `json:"out_msgs"`
+	InBytes       int64  `json:"in_bytes"`
+	OutBytes      int64  `json:"out_bytes"`
+	Subscriptions uint32 `json:"subscriptions"`
+	IsSpoke       bool   `json:"is_spoke"`
+}
+
+// ListLeafNodes queries NATS for connected leaf node servers via $SYS or HTTP monitoring fallback.
+func (e *Entry) ListLeafNodes(ctx context.Context) (*LeafNodesSummary, error) {
+	var data sysLeafzData
+	gotData := false
+
+	// 1. Try NATS $SYS request
+	if msg, err := e.NC.RequestWithContext(ctx, "$SYS.REQ.SERVER.PING.LEAFZ", []byte("{}")); err == nil {
+		var resp sysLeafzResponse
+		if err := json.Unmarshal(msg.Data, &resp); err == nil {
+			if len(resp.Data.Leafs) > 0 || resp.Data.NumLeafnodes > 0 {
+				data = resp.Data
+				gotData = true
+			} else if len(resp.Leafs) > 0 || resp.NumLeafnodes > 0 {
+				data = resp.sysLeafzData
+				gotData = true
+			}
+		}
+	}
+
+	// 2. Fallback to HTTP monitoring endpoint /leafz if available
+	if !gotData && e.NC.ConnectedUrl() != "" {
+		if u, err := url.Parse(e.NC.ConnectedUrl()); err == nil && u.Hostname() != "" {
+			monitorURL := fmt.Sprintf("http://%s:8222/leafz", u.Hostname())
+			req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, monitorURL, nil)
+			if reqErr == nil {
+				client := &http.Client{Timeout: 1500 * time.Millisecond}
+				if resp, err := client.Do(req); err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode == http.StatusOK {
+						var httpData sysLeafzData
+						if err := json.NewDecoder(resp.Body).Decode(&httpData); err == nil {
+							data = httpData
+							gotData = true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	serverID := data.ServerID
+	if serverID == "" {
+		serverID = e.NC.ConnectedServerId()
+	}
+
+	result := &LeafNodesSummary{
+		ServerID: serverID,
+		Count:    len(data.Leafs),
+		Leafs:    make([]LeafNodeInfo, 0, len(data.Leafs)),
+	}
+
+	for _, l := range data.Leafs {
+		name := l.Name
+		if name == "" {
+			name = fmt.Sprintf("leaf-%s:%d", l.IP, l.Port)
+		}
+		acct := l.Account
+		if acct == "" {
+			acct = "$G"
+		}
+		result.Leafs = append(result.Leafs, LeafNodeInfo{
+			Account:       acct,
+			IP:            l.IP,
+			Port:          l.Port,
+			Name:          name,
+			RTT:           l.RTT,
+			InMsgs:        l.InMsgs,
+			OutMsgs:       l.OutMsgs,
+			InBytes:       l.InBytes,
+			OutBytes:      l.OutBytes,
+			Subscriptions: l.Subscriptions,
+			IsSpoke:       l.IsSpoke,
+		})
+	}
+
+	sort.Slice(result.Leafs, func(i, j int) bool {
+		return result.Leafs[i].Name < result.Leafs[j].Name
+	})
+
+	return result, nil
 }
 
 func matchSubject(pattern, subject string) bool {

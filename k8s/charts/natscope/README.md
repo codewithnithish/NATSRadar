@@ -20,7 +20,7 @@ A production-grade Helm chart for deploying **Natscope** (Visual Management, Mon
 From the root of the repository:
 
 ```bash
-helm install natscope deploy/helm/natscope \
+helm install natscope k8s/charts/natscope \
   --namespace natscope --create-namespace \
   --set natscope.natsUrl="nats://nats.nats.svc.cluster.local:4222"
 ```

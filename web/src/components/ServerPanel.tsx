@@ -77,6 +77,18 @@ export function ServerPanel({ connection }: Props) {
             {formatNumber(s.inMsgs)} in / {formatNumber(s.outMsgs)} out
           </span>
         </div>
+
+        <div className="card pad">
+          <span className="small muted">🌿 Connected Leaf Nodes</span>
+          <div style={{ fontSize: 20, fontWeight: 700, marginTop: 4 }}>
+            {s.leafNodes && s.leafNodes > 0 ? (
+              <span style={{ color: "var(--ok, #10b981)" }}>{s.leafNodes} Active</span>
+            ) : (
+              "0 Connected"
+            )}
+          </div>
+          <span className="small muted">Edge server bridges</span>
+        </div>
       </div>
 
       {/* JetStream Storage Limits & Configuration */}

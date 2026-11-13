@@ -13,6 +13,7 @@ export function ClientsPanel({ connectionId, initialSubject = "", onClose }: Pro
   const [subjectFilter, setSubjectFilter] = useState(initialSubject);
   const [activeSubject, setActiveSubject] = useState(initialSubject);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showInternal, setShowInternal] = useState(false);
 
   const clients = useQuery({
     queryKey: ["clients", connectionId, activeSubject],
@@ -25,7 +26,18 @@ export function ClientsPanel({ connectionId, initialSubject = "", onClose }: Pro
     setActiveSubject(subjectFilter.trim());
   };
 
+  const isClientInternal = (c: ClientInfo) =>
+    c.isInternal ||
+    c.kind === "internal" ||
+    c.name.toLowerCase() === "natscope" ||
+    c.name.toLowerCase().startsWith("natscope-");
+
+  const totalClients = clients.data?.length ?? 0;
+  const internalCount = (clients.data ?? []).filter(isClientInternal).length;
+  const appClientCount = totalClients - internalCount;
+
   const filtered = (clients.data ?? []).filter((c: ClientInfo) => {
+    if (!showInternal && isClientInternal(c)) return false;
     if (!searchTerm) return true;
     const lower = searchTerm.toLowerCase();
     return (
@@ -43,7 +55,9 @@ export function ClientsPanel({ connectionId, initialSubject = "", onClose }: Pro
           <h2>Connected Clients & Microservices</h2>
           {clients.isSuccess && (
             <span className="muted small">
-              {clients.data.length} active client{clients.data.length === 1 ? "" : "s"}
+              {showInternal
+                ? `${totalClients} total active connection${totalClients === 1 ? "" : "s"}`
+                : `${appClientCount} microservice${appClientCount === 1 ? "" : "s"}`}
             </span>
           )}
         </div>
@@ -80,7 +94,19 @@ export function ClientsPanel({ connectionId, initialSubject = "", onClose }: Pro
           )}
         </form>
 
-        <div className="tail-actions">
+        <div className="tail-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {internalCount > 0 && (
+            <button
+              type="button"
+              className={`btn small ${showInternal ? "active" : ""}`}
+              onClick={() => setShowInternal(!showInternal)}
+              title={showInternal ? "Hide Natscope internal connection" : "Show Natscope internal connection"}
+              style={{ display: "flex", alignItems: "center", gap: 6 }}
+            >
+              <span>{showInternal ? "👁️ Hide Internal (Natscope)" : "👁️ Show Internal (Natscope)"}</span>
+              <span className="pill muted" style={{ fontSize: 10, padding: "1px 5px" }}>{internalCount}</span>
+            </button>
+          )}
           <input
             type="text"
             value={searchTerm}
@@ -126,6 +152,11 @@ export function ClientsPanel({ connectionId, initialSubject = "", onClose }: Pro
                 <tr key={c.cid}>
                   <td>
                     <strong>{c.name}</strong>
+                    {isClientInternal(c) && (
+                      <span className="pill muted" style={{ marginLeft: 6, fontSize: 10, padding: "2px 6px" }}>
+                        ⚙️ Internal
+                      </span>
+                    )}
                     <span className="muted small"> (#{c.cid})</span>
                   </td>
                   <td>
