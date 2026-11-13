@@ -83,6 +83,7 @@ func New(mgr *conn.Manager, ui fs.FS, version string, log *slog.Logger, auth ...
 	mux.HandleFunc("POST /api/connections/{id}/publish", s.publishMessage)
 	mux.HandleFunc("POST /api/connections/{id}/request", s.sendRequest)
 	mux.HandleFunc("GET /api/connections/{id}/clients", s.listClients)
+	mux.HandleFunc("GET /api/connections/{id}/leafs", s.listLeafNodes)
 	mux.HandleFunc("GET /api/connections/{id}/server", s.getServerDetails)
 
 	// Key-Value Store
@@ -563,6 +564,23 @@ func (s *Server) listClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, clients)
+}
+
+func (s *Server) listLeafNodes(w http.ResponseWriter, r *http.Request) {
+	entry, ok := s.entry(w, r)
+	if !ok {
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
+	defer cancel()
+
+	leafs, err := entry.ListLeafNodes(ctx)
+	if err != nil {
+		s.log.Error("list leaf nodes failed", "error", err)
+		writeError(w, http.StatusBadGateway, "leafs_failed", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, leafs)
 }
 
 func (s *Server) getServerDetails(w http.ResponseWriter, r *http.Request) {

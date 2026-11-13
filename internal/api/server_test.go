@@ -204,6 +204,12 @@ func TestConnectionAndStreamsEndToEnd(t *testing.T) {
 		t.Fatalf("list clients: %d %s", res.StatusCode, body)
 	}
 
+	// Test List Leaf Nodes
+	res, body = do(t, "GET", ts.URL+"/api/connections/local-dev/leafs", "")
+	if res.StatusCode != 200 || !strings.Contains(body, `"count"`) {
+		t.Fatalf("list leaf nodes: %d %s", res.StatusCode, body)
+	}
+
 	// Test Server Details
 	res, body = do(t, "GET", ts.URL+"/api/connections/local-dev/server", "")
 	if res.StatusCode != 200 || !strings.Contains(body, `"version"`) {

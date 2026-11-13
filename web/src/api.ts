@@ -82,6 +82,7 @@ export interface ServerDetails {
   outBytes: number;
   maxPayload: number;
   clusterName?: string;
+  leafNodes?: number;
   jetStreamEnabled: boolean;
   jsMaxMemory?: number;
   jsMaxStorage?: number;
@@ -213,6 +214,28 @@ export interface ClientInfo {
   outBytes: number;
   subscriptions: string[];
   matchingSubscriptions?: string[];
+  isInternal?: boolean;
+  kind?: string;
+}
+
+export interface LeafNodeInfo {
+  account: string;
+  ip: string;
+  port: number;
+  name: string;
+  rtt?: string;
+  inMsgs: number;
+  outMsgs: number;
+  inBytes: number;
+  outBytes: number;
+  subscriptions: number;
+  isSpoke: boolean;
+}
+
+export interface LeafNodesSummary {
+  serverId: string;
+  count: number;
+  leafs: LeafNodeInfo[];
 }
 
 export class ApiError extends Error {
@@ -395,5 +418,6 @@ export const api = {
     const qs = subject ? `?subject=${enc(subject)}` : "";
     return request<ClientInfo[]>(`/api/connections/${enc(id)}/clients${qs}`);
   },
+  leafNodes: (id: string) => request<LeafNodesSummary>(`/api/connections/${enc(id)}/leafs`),
   serverDetails: (id: string) => request<ServerDetails>(`/api/connections/${enc(id)}/server`),
 };

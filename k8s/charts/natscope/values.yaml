@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: codewithnithish/natscope
+  repository: ghcr.io/codewithnithish/natscope
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  # Overrides the image tag whose default is the chart appVersion (1.0.0).
+  tag: "v1.0.0"
 
 imagePullSecrets: []
 nameOverride: ""

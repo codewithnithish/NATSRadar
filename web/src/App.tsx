@@ -8,6 +8,7 @@ import { MessagesPanel } from "./components/MessagesPanel";
 import { LiveTailPanel } from "./components/LiveTailPanel";
 import { PublishModal } from "./components/PublishModal";
 import { ClientsPanel } from "./components/ClientsPanel";
+import { LeafNodesPanel } from "./components/LeafNodesPanel";
 import { CreateStreamModal } from "./components/CreateStreamModal";
 import { ServerPanel } from "./components/ServerPanel";
 import { KVPanel } from "./components/KVPanel";
@@ -34,6 +35,7 @@ export default function App() {
   );
   const [clientsSubject, setClientsSubject] = useState<string | null>(null);
   const [showClientsPanel, setShowClientsPanel] = useState(true);
+  const [showLeafNodesPanel, setShowLeafNodesPanel] = useState(true);
   const [showLiveTailPanel, setShowLiveTailPanel] = useState(true);
   const [creatingStream, setCreatingStream] = useState(false);
 
@@ -263,14 +265,22 @@ export default function App() {
 
             {activeTab === "core" && (
               <>
-                {(!showClientsPanel || !showLiveTailPanel) && (
-                  <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                {(!showClientsPanel || !showLeafNodesPanel || !showLiveTailPanel) && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
                     {!showClientsPanel && (
                       <button
                         className="btn small"
                         onClick={() => setShowClientsPanel(true)}
                       >
                         + Show Connected Clients
+                      </button>
+                    )}
+                    {!showLeafNodesPanel && (
+                      <button
+                        className="btn small"
+                        onClick={() => setShowLeafNodesPanel(true)}
+                      >
+                        + Show Leaf Nodes
                       </button>
                     )}
                     {!showLiveTailPanel && (
@@ -290,7 +300,18 @@ export default function App() {
                     onClose={() => {
                       setClientsSubject(null);
                       setShowClientsPanel(false);
-                      if (!showLiveTailPanel) {
+                      if (!showLiveTailPanel && !showLeafNodesPanel) {
+                        setActiveTab("jetstream");
+                      }
+                    }}
+                  />
+                )}
+                {showLeafNodesPanel && (
+                  <LeafNodesPanel
+                    connectionId={current.id}
+                    onClose={() => {
+                      setShowLeafNodesPanel(false);
+                      if (!showClientsPanel && !showLiveTailPanel) {
                         setActiveTab("jetstream");
                       }
                     }}
@@ -303,7 +324,7 @@ export default function App() {
                     onClose={() => {
                       setTailSubject(null);
                       setShowLiveTailPanel(false);
-                      if (!showClientsPanel) {
+                      if (!showClientsPanel && !showLeafNodesPanel) {
                         setActiveTab("jetstream");
                       }
                     }}
