@@ -59,7 +59,7 @@ async def main():
     logger.info(f"   JetStream Ack received! Stream={ack.stream}, Sequence={ack.seq}\n")
 
     print("=" * 60)
-    print("✅ All messages dispatched! Check Natscope Web UI (http://localhost:8080)")
+    print("✅ All messages dispatched! Check NATSRadar Web UI (http://localhost:8080)")
     print("=" * 60 + "\n")
 
     await nc.drain()

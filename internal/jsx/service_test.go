@@ -9,8 +9,8 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	"github.com/codewithnithish/natscope/internal/jsx"
-	"github.com/codewithnithish/natscope/internal/testutil"
+	"github.com/codewithnithish/natsradar/internal/jsx"
+	"github.com/codewithnithish/natsradar/internal/testutil"
 )
 
 func setup(t *testing.T) (jetstream.JetStream, context.Context) {

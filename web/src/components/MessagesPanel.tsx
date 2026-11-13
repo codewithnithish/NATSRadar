@@ -67,7 +67,7 @@ export function MessagesPanel({ connectionId, stream, firstSeq, lastSeq, onRedri
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `natscope-${stream}-messages.json`;
+    a.download = `natsradar-${stream}-messages.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

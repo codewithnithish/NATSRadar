@@ -1,4 +1,4 @@
-// Package storage provides pluggable storage drivers for Natscope.
+// Package storage provides pluggable storage drivers for NATSRadar.
 // Supported backends:
 // - Local filesystem (Local disk, Kubernetes PV, PVC, and NFS mounts)
 // - Amazon S3 / MinIO / S3-compatible Object Storage

@@ -1,5 +1,5 @@
 // Package jsx is the JetStream service layer: read-only views over streams and
-// consumers, shaped for the Natscope API.
+// consumers, shaped for the NATSRadar API.
 package jsx
 
 import (

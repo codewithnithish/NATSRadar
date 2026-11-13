@@ -1,15 +1,15 @@
-# Natscope
+# NATSRadar
 
 A modern, high-performance web UI, developer console, and observability platform for [NATS](https://nats.io) and JetStream.
 
 Think **"Kafka UI / Redis Insight, for NATS"**.
 
-[![Release](https://img.shields.io/github/v/release/codewithnithish/Natscope?logo=github&color=blue)](https://github.com/codewithnithish/Natscope/releases)
-[![CI](https://github.com/codewithnithish/Natscope/actions/workflows/ci.yml/badge.svg)](https://github.com/codewithnithish/Natscope/actions)
-[![Security Scan](https://github.com/codewithnithish/Natscope/actions/workflows/security.yml/badge.svg)](https://github.com/codewithnithish/Natscope/security/code-scanning)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fcodewithnithish%2Fnatscope-blue?logo=docker)](https://github.com/codewithnithish/Natscope/pkgs/container/natscope)
-[![Helm Chart](https://img.shields.io/badge/helm-chart-0F1689?logo=helm)](k8s/charts/natscope)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/codewithnithish/Natscope?logo=go)](go.mod)
+[![Release](https://img.shields.io/github/v/release/codewithnithish/NATSRadar?logo=github&color=blue)](https://github.com/codewithnithish/NATSRadar/releases)
+[![CI](https://github.com/codewithnithish/NATSRadar/actions/workflows/ci.yml/badge.svg)](https://github.com/codewithnithish/NATSRadar/actions)
+[![Security Scan](https://github.com/codewithnithish/NATSRadar/actions/workflows/security.yml/badge.svg)](https://github.com/codewithnithish/NATSRadar/security/code-scanning)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fcodewithnithish%2Fnatsradar-blue?logo=docker)](https://github.com/codewithnithish/NATSRadar/pkgs/container/natsradar)
+[![Helm Chart](https://img.shields.io/badge/helm-chart-0F1689?logo=helm)](k8s/charts/natsradar)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/codewithnithish/NATSRadar?logo=go)](go.mod)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ---
@@ -61,17 +61,17 @@ Think **"Kafka UI / Redis Insight, for NATS"**.
 
 ### Option A: Using Docker Compose (Recommended)
 
-Run NATS + Natscope with demo data in one command:
+Run NATS + NATSRadar with demo data in one command:
 
 ```bash
-# 1. Start NATS and Natscope
+# 1. Start NATS and NATSRadar
 docker compose -f docker/docker-compose.yml up --build -d
 
 # 2. In another terminal, seed demo streams, KV buckets, and files:
 docker compose -f docker/docker-compose.yml --profile seed run --rm seed
 ```
 
-Or connect Natscope standalone to an existing NATS server on your machine:
+Or connect NATSRadar standalone to an existing NATS server on your machine:
 ```bash
 docker compose -f docker/standalone.yml up -d
 ```
@@ -87,14 +87,14 @@ Open **http://localhost:8080** and sign in:
 Deploy directly to your Kubernetes cluster:
 
 ```bash
-helm install natscope k8s/charts/natscope \
-  --namespace natscope --create-namespace \
-  --set natscope.natsUrl="nats://nats.default.svc.cluster.local:4222"
+helm install natsradar k8s/charts/natsradar \
+  --namespace natsradar --create-namespace \
+  --set natsradar.natsUrl="nats://nats.default.svc.cluster.local:4222"
 ```
 
 Port forward to open the UI:
 ```bash
-kubectl port-forward -n natscope svc/natscope 8080:8080
+kubectl port-forward -n natsradar svc/natsradar 8080:8080
 ```
 
 ---
@@ -105,8 +105,8 @@ kubectl port-forward -n natscope svc/natscope 8080:8080
 # Build the single standalone binary (React UI is embedded inside Go binary)
 make build
 
-# Start Natscope
-./bin/natscope
+# Start NATSRadar
+./bin/natsradar
 ```
 
 ---
@@ -135,21 +135,21 @@ Open **http://localhost:5173**.
 
 | Variable | Default | Description |
 |---|---|---|
-| `NATSCOPE_ADDR` | `:8080` | HTTP listen address |
+| `NATSRADAR_ADDR` | `:8080` | HTTP listen address (fallback: `NATSCOPE_ADDR`) |
 | `NATS_URL` | `nats://127.0.0.1:4222` | Default NATS connection created on boot |
-| `NATSCOPE_DEFAULT_CONNECTION_NAME` | `default` | Display name of the default connection |
-| `NATSCOPE_READ_ONLY` | `false` | When `true`, disables stream/consumer mutation and publishing |
-| `NATSCOPE_STORAGE_PATH` | `.data/connections.json` | Path where added connections are persisted |
-| `NATSCOPE_AUTH_ENABLED` | `true` | Enables Web UI and API authentication |
-| `NATSCOPE_AUTH_USER` | `admin` | Administrative login username |
-| `NATSCOPE_AUTH_PASS` | `admin@123` | Administrative login password |
-| `NATSCOPE_LOG_LEVEL` | `info` | Logging verbosity (`debug`, `info`, `warn`, `error`) |
+| `NATSRADAR_DEFAULT_CONNECTION_NAME` | `default` | Display name of the default connection |
+| `NATSRADAR_READ_ONLY` | `false` | When `true`, disables stream/consumer mutation and publishing |
+| `NATSRADAR_STORAGE_PATH` | `.data/connections.json` | Path where added connections are persisted |
+| `NATSRADAR_AUTH_ENABLED` | `true` | Enables Web UI and API authentication |
+| `NATSRADAR_AUTH_USER` | `admin` | Administrative login username |
+| `NATSRADAR_AUTH_PASS` | `admin@123` | Administrative login password |
+| `NATSRADAR_LOG_LEVEL` | `info` | Logging verbosity (`debug`, `info`, `warn`, `error`) |
 
 ---
 
 ## 🗺️ REST API Reference
 
-All write operations enforce the connection's `readOnly` setting. When `NATSCOPE_AUTH_ENABLED=true`, endpoints accept either the `natscope_session` cookie or `Authorization: Basic <credentials>` / `Bearer <token>`.
+All write operations enforce the connection's `readOnly` setting. When `NATSRADAR_AUTH_ENABLED=true`, endpoints accept either the `natsradar_session` cookie (or legacy `natscope_session`) or `Authorization: Basic <credentials>` / `Bearer <token>`.
 
 ### Authentication
 - `GET /api/auth/me` — Check current authentication state
@@ -203,27 +203,27 @@ All write operations enforce the connection's `readOnly` setting. When `NATSCOPE
 
 ## 💾 Multi-Storage Backend Architecture
 
-Natscope supports flexible storage driver backends for configuration persistence, audit logs, and object store exports:
+NATSRadar supports flexible storage driver backends for configuration persistence, audit logs, and object store exports:
 
 | Storage Provider | Configuration | Typical Deployment Scenario |
 |---|---|---|
-| **Local Disk / hostPath** | `NATSCOPE_STORAGE_DRIVER=local` (default) | Local development, single-node Docker containers |
-| **AWS S3 / MinIO / Ceph** | `NATSCOPE_STORAGE_DRIVER=s3` | Cloud-native multi-replica clusters, high durability |
+| **Local Disk / hostPath** | `NATSRADAR_STORAGE_TYPE=local` (default) | Local development, single-node Docker containers |
+| **AWS S3 / MinIO / Ceph** | `NATSRADAR_STORAGE_TYPE=s3` | Cloud-native multi-replica clusters, high durability |
 | **Kubernetes PVC / PV** | Standard Volume Mounts (`/data`) | Kubernetes Helm deployments (StatefulSet/Deployment) |
 | **NFS / Network Shares** | Volume Mounts mapped to POSIX path | Enterprise on-prem shared storage |
 
 ### S3 & Object Store Environment Variables:
 ```bash
-NATSCOPE_STORAGE_DRIVER=s3
-NATSCOPE_S3_ENDPOINT="s3.us-east-1.amazonaws.com"
-NATSCOPE_S3_BUCKET="my-natscope-bucket"
-NATSCOPE_S3_REGION="us-east-1"
-NATSCOPE_S3_PREFIX="natscope/"
-NATSCOPE_S3_ACCESS_KEY="AKIA..."
-NATSCOPE_S3_SECRET_KEY="secret..."
-NATSCOPE_S3_STORAGE_CLASS="STANDARD"  # GLACIER, INTELLIGENT_TIERING, etc.
-NATSCOPE_S3_TTL_DAYS=30                # Automatic object expiration
-NATSCOPE_S3_MAX_BYTES=107374182400    # Storage quota limit (e.g. 100GB)
+NATSRADAR_STORAGE_TYPE=s3
+NATSRADAR_S3_ENDPOINT="s3.us-east-1.amazonaws.com"
+NATSRADAR_S3_BUCKET="my-natsradar-bucket"
+NATSRADAR_S3_REGION="us-east-1"
+NATSRADAR_S3_PREFIX="natsradar/"
+NATSRADAR_S3_ACCESS_KEY="AKIA..."
+NATSRADAR_S3_SECRET_KEY="secret..."
+NATSRADAR_S3_STORAGE_CLASS="STANDARD"  # GLACIER, INTELLIGENT_TIERING, etc.
+NATSRADAR_S3_TTL_DAYS=30                # Automatic object expiration
+NATSRADAR_S3_MAX_BYTES=107374182400    # Storage quota limit (e.g. 100GB)
 ```
 
 ---
@@ -231,16 +231,16 @@ NATSCOPE_S3_MAX_BYTES=107374182400    # Storage quota limit (e.g. 100GB)
 ## 🏛️ Project Architecture
 
 ```
-Natscope
+NATSRadar
 ├── cmd/
-│   ├── natscope/             # Server entrypoint (single self-contained binary)
-│   └── natscope-seed/        # Realistic demo data generator (Streams, Consumers, KV, Objects)
+│   ├── natsradar/            # Server entrypoint (single self-contained binary)
+│   └── natsradar-seed/       # Realistic demo data generator (Streams, Consumers, KV, Objects)
 ├── docker/
 │   ├── Dockerfile            # Multi-arch distroless container image
-│   ├── docker-compose.yml    # NATS + Natscope complete local stack
+│   ├── docker-compose.yml    # NATS + NATSRadar complete local stack
 │   └── standalone.yml        # Connect to existing NATS server
 ├── k8s/
-│   └── charts/natscope/      # Production Helm chart (Deployment, Service, PVC, Ingress)
+│   └── charts/natsradar/     # Production Helm chart (Deployment, Service, PVC, Ingress)
 ├── internal/
 │   ├── api/                  # REST API, auth middleware, SSE flusher, static UI file server
 │   ├── config/               # Environment variable configuration parser

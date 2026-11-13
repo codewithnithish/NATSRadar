@@ -108,8 +108,8 @@ async def main():
     logger.info(f"   -> Uploaded 'performance_audit_2026.json' ({info1.size} bytes, digest: {info1.digest[:16]}...)")
 
     # 3. Upload a Markdown document
-    markdown_doc = b"""# Natscope Architecture Overview
-Natscope provides full-duplex introspection and management over:
+    markdown_doc = b"""# NATSRadar Architecture Overview
+NATSRadar provides full-duplex introspection and management over:
 - NATS Core Pub/Sub
 - Request / Reply RPC
 - JetStream Streams and Durable Consumers
@@ -138,7 +138,7 @@ Natscope provides full-duplex introspection and management over:
 
     print("\n" + "=" * 65)
     print("🎉 ALL DATA SEEDED SUCCESSFULLY!")
-    print("Open Natscope UI (http://localhost:8080) to inspect:")
+    print("Open NATSRadar UI (http://localhost:8080) to inspect:")
     print("   1. 🗄️  KV Store       -> Click 'system-configs' -> View keys and click 'History'")
     print("   2. 📦 Object Store    -> Click 'reports' -> View files, SHA-256 digests, and click '⬇ Download'")
     print("   3. ⚙️  Server Info    -> View live RAM, JetStream disk usage, and server telemetry")

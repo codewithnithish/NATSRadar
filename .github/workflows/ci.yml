@@ -64,8 +64,8 @@ jobs:
         with:
           version: v3.14.0
 
-      - name: Lint Natscope Helm Chart
-        run: helm lint k8s/charts/natscope
+      - name: Lint NATSRadar Helm Chart
+        run: helm lint k8s/charts/natsradar
 
   docker-build:
     name: Docker Container Build Check
@@ -83,6 +83,6 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: false
-          tags: natscope:test
+          tags: natsradar:test
           cache-from: type=gha
           cache-to: type=gha,mode=max

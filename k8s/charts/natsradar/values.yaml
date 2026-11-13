@@ -1,14 +1,14 @@
-# Default values for natscope.
+# Default values for natsradar.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: ghcr.io/codewithnithish/natscope
+  repository: ghcr.io/codewithnithish/natsradar
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion (1.0.0).
-  tag: "v1.0.0"
+  # Overrides the image tag whose default is the chart appVersion (1.1.0).
+  tag: "v1.1.0"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -49,14 +49,14 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: natscope.local
+    - host: natsradar.local
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls: []
-  #  - secretName: natscope-tls
+  #  - secretName: natsradar-tls
   #    hosts:
-  #      - natscope.local
+  #      - natsradar.local
 
 resources:
   limits:
@@ -66,8 +66,8 @@ resources:
     cpu: 50m
     memory: 64Mi
 
-# Natscope Application Settings
-natscope:
+# NATSRadar Application Settings
+natsradar:
   # The URL of the primary NATS cluster to connect to on boot.
   # e.g., "nats://nats.nats.svc.cluster.local:4222" or "tls://nats.mycompany.com:4222"
   natsUrl: "nats://nats:4222"
@@ -88,15 +88,15 @@ natscope:
     password: "admin@123"
     # To load credentials from an existing Kubernetes Secret instead:
     existingSecret: ""
-    userKey: "NATSCOPE_AUTH_USER"
-    passwordKey: "NATSCOPE_AUTH_PASS"
+    userKey: "NATSRADAR_AUTH_USER"
+    passwordKey: "NATSRADAR_AUTH_PASS"
 
   # S3 External Object Storage Provider (Alternative or supplement to volume persistence)
   # Supported: AWS S3, MinIO, Ceph, Cloudflare R2, Wasabi, Google Cloud Storage
   s3:
     enabled: false
     endpoint: "s3.amazonaws.com"
-    bucket: "natscope-storage"
+    bucket: "natsradar-storage"
     prefix: "clusters/"
     region: "us-east-1"
     useSSL: true
@@ -138,7 +138,7 @@ persistence:
 
   # Settings for type: hostPath
   hostPath:
-    path: "/var/lib/natscope"
+    path: "/var/lib/natsradar"
     type: "DirectoryOrCreate"
 
 # Probes

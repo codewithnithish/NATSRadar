@@ -1,4 +1,4 @@
-// Package api exposes the Natscope REST API and serves the embedded web UI.
+// Package api exposes the NATSRadar REST API and serves the embedded web UI.
 package api
 
 import (
@@ -24,8 +24,8 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	"github.com/codewithnithish/natscope/internal/conn"
-	"github.com/codewithnithish/natscope/internal/jsx"
+	"github.com/codewithnithish/natsradar/internal/conn"
+	"github.com/codewithnithish/natsradar/internal/jsx"
 )
 
 const (
@@ -714,7 +714,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	s.sessions.Store(token, req.Username)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "natscope_session",
+		Name:     "natsradar_session",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
@@ -729,9 +729,19 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
+	if c, err := r.Cookie("natsradar_session"); err == nil {
+		s.sessions.Delete(c.Value)
+	}
 	if c, err := r.Cookie("natscope_session"); err == nil {
 		s.sessions.Delete(c.Value)
 	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "natsradar_session",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "natscope_session",
 		Value:    "",
@@ -780,7 +790,9 @@ func (s *Server) isAuthenticated(r *http.Request) bool {
 		token = strings.TrimPrefix(ah, "Bearer ")
 	}
 	if token == "" {
-		if c, err := r.Cookie("natscope_session"); err == nil {
+		if c, err := r.Cookie("natsradar_session"); err == nil {
+			token = c.Value
+		} else if c, err := r.Cookie("natscope_session"); err == nil {
 			token = c.Value
 		}
 	}

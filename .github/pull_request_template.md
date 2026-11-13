@@ -15,5 +15,5 @@
 - [ ] I have added unit tests for new functionality where applicable
 - [ ] All tests pass locally (`go test ./...` and `npm run build`)
 - [ ] No secrets, private keys, or credentials are committed
-- [ ] Helm chart linting passes (`helm lint k8s/charts/natscope`) if chart modified
+- [ ] Helm chart linting passes (`helm lint k8s/charts/natsradar`) if chart modified
 

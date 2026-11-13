@@ -41,14 +41,14 @@ export default function App() {
 
   // Theme Switcher
   const [theme, setTheme] = useState<"dark" | "light">(() => {
-    const saved = localStorage.getItem("natscope_theme");
+    const saved = localStorage.getItem("natsradar_theme") || localStorage.getItem("natscope_theme");
     if (saved === "light" || saved === "dark") return saved;
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("natscope_theme", theme);
+    localStorage.setItem("natsradar_theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -112,7 +112,7 @@ export default function App() {
           <span className="logo" aria-hidden="true">
             ◈
           </span>
-          <span>Natscope</span>
+          <span>NATSRadar</span>
         </div>
 
         <ConnectionBar
@@ -152,14 +152,14 @@ export default function App() {
       <main className="content">
         {connections.isError && (
           <div className="banner bad">
-            Cannot reach the Natscope server: {(connections.error as Error).message}
+            Cannot reach the NATSRadar server: {(connections.error as Error).message}
           </div>
         )}
 
         {connections.isSuccess && connections.data.length === 0 && (
           <div className="empty">
             <h2>No NATS connection yet</h2>
-            <p>Use “Add connection” above to point Natscope at a NATS server.</p>
+            <p>Use “Add connection” above to point NATSRadar at a NATS server.</p>
           </div>
         )}
 

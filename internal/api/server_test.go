@@ -15,9 +15,9 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	"github.com/codewithnithish/natscope/internal/api"
-	"github.com/codewithnithish/natscope/internal/conn"
-	"github.com/codewithnithish/natscope/internal/testutil"
+	"github.com/codewithnithish/natsradar/internal/api"
+	"github.com/codewithnithish/natsradar/internal/conn"
+	"github.com/codewithnithish/natsradar/internal/testutil"
 )
 
 func newTestServer(t *testing.T) *httptest.Server {
@@ -396,7 +396,7 @@ func TestAuthServer(t *testing.T) {
 		t.Fatalf("expected 200 login, got %d", loginRes.StatusCode)
 	}
 	cookies := loginRes.Cookies()
-	if len(cookies) == 0 || cookies[0].Name != "natscope_session" {
+	if len(cookies) == 0 || cookies[0].Name != "natsradar_session" {
 		t.Fatalf("missing session cookie")
 	}
 

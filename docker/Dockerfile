@@ -17,13 +17,14 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=web /web/dist ./internal/webui/dist
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/natscope ./cmd/natscope \
- && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /out/natscope-seed ./cmd/natscope-seed
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/natsradar ./cmd/natsradar \
+ && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /out/natsradar-seed ./cmd/natsradar-seed
 
 # ---- 3. minimal runtime image ----
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /out/natscope /natscope
-COPY --from=build /out/natscope-seed /natscope-seed
+COPY --from=build /out/natsradar /natsradar
+COPY --from=build /out/natsradar /natscope
+COPY --from=build /out/natsradar-seed /natsradar-seed
 EXPOSE 8080
 USER nonroot
-ENTRYPOINT ["/natscope"]
+ENTRYPOINT ["/natsradar"]

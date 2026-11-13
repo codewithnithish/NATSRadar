@@ -1,4 +1,4 @@
-// Package config loads Natscope runtime configuration from environment variables.
+// Package config loads NatsRadar runtime configuration from environment variables.
 package config
 
 import (
@@ -46,7 +46,7 @@ type Config struct {
 
 // FromEnv reads configuration from the environment, applying defaults.
 func FromEnv() Config {
-	addr := getenv("NATSCOPE_ADDR", "")
+	addr := getenv("NATSRADAR_ADDR", "")
 	if addr == "" {
 		if p, ok := os.LookupEnv("PORT"); ok && p != "" {
 			addr = ":" + p
@@ -58,36 +58,49 @@ func FromEnv() Config {
 	return Config{
 		Addr:                  addr,
 		NATSURL:               getenv("NATS_URL", "nats://127.0.0.1:4222"),
-		DefaultConnectionName: getenv("NATSCOPE_DEFAULT_CONNECTION_NAME", "default"),
-		ReadOnly:              getbool("NATSCOPE_READ_ONLY", false),
-		LogLevel:              parseLevel(getenv("NATSCOPE_LOG_LEVEL", "info")),
-		StoragePath:           getenv("NATSCOPE_STORAGE_PATH", ".data/connections.json"),
-		StorageType:           getenv("NATSCOPE_STORAGE_TYPE", "local"),
-		S3Endpoint:            getenv("NATSCOPE_S3_ENDPOINT", ""),
-		S3Bucket:              getenv("NATSCOPE_S3_BUCKET", ""),
-		S3Prefix:              getenv("NATSCOPE_S3_PREFIX", ""),
-		S3Region:              getenv("NATSCOPE_S3_REGION", "us-east-1"),
-		S3AccessKey:           getenv("NATSCOPE_S3_ACCESS_KEY", ""),
-		S3SecretKey:           getenv("NATSCOPE_S3_SECRET_KEY", ""),
-		S3UseSSL:              getbool("NATSCOPE_S3_USE_SSL", true),
-		S3StorageClass:        getenv("NATSCOPE_S3_STORAGE_CLASS", "STANDARD"),
-		S3TTLDays:             getint("NATSCOPE_S3_TTL_DAYS", 0),
-		S3MaxBytes:            getint64("NATSCOPE_S3_MAX_BYTES", 0),
-		AuthEnabled:           getbool("NATSCOPE_AUTH_ENABLED", true),
-		AuthUser:              getenv("NATSCOPE_AUTH_USER", "admin"),
-		AuthPass:              getenv("NATSCOPE_AUTH_PASS", "admin@123"),
+		DefaultConnectionName: getenv("NATSRADAR_DEFAULT_CONNECTION_NAME", "default"),
+		ReadOnly:              getbool("NATSRADAR_READ_ONLY", false),
+		LogLevel:              parseLevel(getenv("NATSRADAR_LOG_LEVEL", "info")),
+		StoragePath:           getenv("NATSRADAR_STORAGE_PATH", ".data/connections.json"),
+		StorageType:           getenv("NATSRADAR_STORAGE_TYPE", "local"),
+		S3Endpoint:            getenv("NATSRADAR_S3_ENDPOINT", ""),
+		S3Bucket:              getenv("NATSRADAR_S3_BUCKET", ""),
+		S3Prefix:              getenv("NATSRADAR_S3_PREFIX", ""),
+		S3Region:              getenv("NATSRADAR_S3_REGION", "us-east-1"),
+		S3AccessKey:           getenv("NATSRADAR_S3_ACCESS_KEY", ""),
+		S3SecretKey:           getenv("NATSRADAR_S3_SECRET_KEY", ""),
+		S3UseSSL:              getbool("NATSRADAR_S3_USE_SSL", true),
+		S3StorageClass:        getenv("NATSRADAR_S3_STORAGE_CLASS", "STANDARD"),
+		S3TTLDays:             getint("NATSRADAR_S3_TTL_DAYS", 0),
+		S3MaxBytes:            getint64("NATSRADAR_S3_MAX_BYTES", 0),
+		AuthEnabled:           getbool("NATSRADAR_AUTH_ENABLED", true),
+		AuthUser:              getenv("NATSRADAR_AUTH_USER", "admin"),
+		AuthPass:              getenv("NATSRADAR_AUTH_PASS", "admin@123"),
 	}
 }
 
-func getenv(key, def string) string {
+func lookupEnv(key string) (string, bool) {
 	if v, ok := os.LookupEnv(key); ok {
+		return v, true
+	}
+	if strings.HasPrefix(key, "NATSRADAR_") {
+		legacyKey := "NATSCOPE_" + strings.TrimPrefix(key, "NATSRADAR_")
+		if v, ok := os.LookupEnv(legacyKey); ok {
+			return v, true
+		}
+	}
+	return "", false
+}
+
+func getenv(key, def string) string {
+	if v, ok := lookupEnv(key); ok {
 		return v
 	}
 	return def
 }
 
 func getbool(key string, def bool) bool {
-	v, ok := os.LookupEnv(key)
+	v, ok := lookupEnv(key)
 	if !ok {
 		return def
 	}
@@ -99,7 +112,7 @@ func getbool(key string, def bool) bool {
 }
 
 func getint(key string, def int) int {
-	v, ok := os.LookupEnv(key)
+	v, ok := lookupEnv(key)
 	if !ok {
 		return def
 	}
@@ -111,7 +124,7 @@ func getint(key string, def int) int {
 }
 
 func getint64(key string, def int64) int64 {
-	v, ok := os.LookupEnv(key)
+	v, ok := lookupEnv(key)
 	if !ok {
 		return def
 	}

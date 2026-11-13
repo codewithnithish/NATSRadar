@@ -1,4 +1,4 @@
-// Command natscope-seed creates demo streams and consumers so there is
+// Command natsradar-seed creates demo streams and consumers so there is
 // something to look at in the UI. It models an "orders" service producing events
 // that a "payments" service consumes, and the reverse.
 //
@@ -29,7 +29,7 @@ func main() {
 }
 
 func run(url string) error {
-	nc, err := nats.Connect(url, nats.Name("natscope-seed"), nats.Timeout(5*time.Second))
+	nc, err := nats.Connect(url, nats.Name("natsradar-seed"), nats.Timeout(5*time.Second))
 	if err != nil {
 		return fmt.Errorf("connect %s: %w", url, err)
 	}

@@ -1,27 +1,27 @@
-# Standalone Natscope UI (Connects to an existing NATS Server)
+# Standalone NATSRadar UI (Connects to an existing NATS Server)
 # Usage:
 #   docker compose -f docker/standalone.yml up -d
 services:
-  natscope:
+  natsradar:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: natscope-ui
+    container_name: natsradar-ui
     environment:
       # Use host.docker.internal to reach NATS running on the host machine
       NATS_URL: ${NATS_URL:-nats://host.docker.internal:4222}
-      NATSCOPE_STORAGE_PATH: /data/connections.json
-      NATSCOPE_AUTH_ENABLED: "${NATSCOPE_AUTH_ENABLED:-true}"
-      NATSCOPE_AUTH_USER: "${NATSCOPE_AUTH_USER:-admin}"
-      NATSCOPE_AUTH_PASS: "${NATSCOPE_AUTH_PASS:-admin@123}"
-      NATSCOPE_DEFAULT_CONNECTION_NAME: "${NATSCOPE_DEFAULT_CONNECTION_NAME:-Host NATS}"
+      NATSRADAR_STORAGE_PATH: /data/connections.json
+      NATSRADAR_AUTH_ENABLED: "${NATSRADAR_AUTH_ENABLED:-true}"
+      NATSRADAR_AUTH_USER: "${NATSRADAR_AUTH_USER:-admin}"
+      NATSRADAR_AUTH_PASS: "${NATSRADAR_AUTH_PASS:-admin@123}"
+      NATSRADAR_DEFAULT_CONNECTION_NAME: "${NATSRADAR_DEFAULT_CONNECTION_NAME:-Host NATS}"
     volumes:
-      - natscope-data:/data
+      - natsradar-data:/data
     ports:
-      - "${NATSCOPE_PORT:-8080}:8080"
+      - "${NATSRADAR_PORT:-${NATSCOPE_PORT:-8080}}:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 volumes:
-  natscope-data:
+  natsradar-data:
 
