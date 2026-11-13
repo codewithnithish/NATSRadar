@@ -7,20 +7,15 @@ services:
     image: nats:2-alpine
     container_name: nats-server
     command:
-      - "-js"
-      - "-sd"
-      - "${NATS_STORE_DIR:-/data}"
-      - "-m"
-      - "8222"
-      - "--max_mem"
-      - "${NATS_MAX_MEM:-2G}"
-      - "--max_file"
-      - "${NATS_MAX_FILE:-20G}"
+      - "-c"
+      - "/etc/nats/nats.conf"
     ports:
       - "${NATS_CLIENT_PORT:-4222}:4222"
       - "${NATS_MONITOR_PORT:-8222}:8222"
+      - "7422:7422"
     volumes:
       - nats-data:/data
+      - ./nats.conf:/etc/nats/nats.conf:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
       interval: 5s
@@ -54,6 +49,19 @@ services:
       dockerfile: docker/Dockerfile
     entrypoint: ["/natscope-seed"]
     command: ["-url", "nats://nats:4222"]
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  leaf-edge:
+    profiles: ["leaf"]
+    image: nats:2-alpine
+    container_name: nats-leaf-edge
+    command:
+      - "-c"
+      - "/etc/nats/leaf-edge.conf"
+    volumes:
+      - ./leaf-edge.conf:/etc/nats/leaf-edge.conf:ro
     depends_on:
       nats:
         condition: service_healthy

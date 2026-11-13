@@ -657,6 +657,7 @@ type sysLeafzResponse struct {
 type sysLeafzData struct {
 	ServerID     string    `json:"server_id"`
 	NumLeafnodes int       `json:"num_leafnodes"`
+	Leafnodes    int       `json:"leafnodes"`
 	Leafs        []sysLeaf `json:"leafs"`
 }
 
@@ -683,10 +684,10 @@ func (e *Entry) ListLeafNodes(ctx context.Context) (*LeafNodesSummary, error) {
 	if msg, err := e.NC.RequestWithContext(ctx, "$SYS.REQ.SERVER.PING.LEAFZ", []byte("{}")); err == nil {
 		var resp sysLeafzResponse
 		if err := json.Unmarshal(msg.Data, &resp); err == nil {
-			if len(resp.Data.Leafs) > 0 || resp.Data.NumLeafnodes > 0 {
+			if len(resp.Data.Leafs) > 0 || resp.Data.NumLeafnodes > 0 || resp.Data.Leafnodes > 0 {
 				data = resp.Data
 				gotData = true
-			} else if len(resp.Leafs) > 0 || resp.NumLeafnodes > 0 {
+			} else if len(resp.Leafs) > 0 || resp.NumLeafnodes > 0 || resp.Leafnodes > 0 {
 				data = resp.sysLeafzData
 				gotData = true
 			}

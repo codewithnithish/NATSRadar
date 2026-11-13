@@ -39,6 +39,11 @@ Think **"Kafka UI / Redis Insight, for NATS"**.
 - **📡 Core NATS & Microservice Inspector**:
   - Discover which microservice clients are connected and subscribed to each subject (via NATS `$SYS.REQ.SERVER.*.CONNZ`).
   - **Live Subject Tailing**: Real-time SSE stream tailer with pause/resume and search filter.
+  - **👁️ Smart Client Filtering**: One-click toggle between application microservices and internal management clients.
+- **🌿 Leaf Nodes & Edge Observability**:
+  - Discover remote edge NATS servers bridged to the central cloud cluster via Leaf Node protocol (`port: 7422`).
+  - Live Round-Trip Time (RTT latency), inbound/outbound roles, bridged accounts, and message throughput.
+  - [**Read the Cloud-to-Edge Hybrid Architecture Guide**](usecase/leaf-node-cloud-edge-architecture.md).
 - **✉️ Request / Reply Tester**:
   - Synchronous request/reply tester with round-trip latency metrics and response inspection.
 - **⚙️ Server & Cluster Overview**:
@@ -245,6 +250,7 @@ Natscope
 │   ├── testutil/             # In-process test harness for integration testing
 │   └── webui/                # Embedded React SPA build
 ├── web/                      # Modern React + TypeScript + Vite SPA
+├── usecase/                  # Enterprise architecture blueprints & diagrams
 └── examples/
     └── python-services/      # Microservice client simulations for live telemetry testing
 ```
