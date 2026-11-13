@@ -12,10 +12,6 @@ services:
       - "${NATS_STORE_DIR:-/data}"
       - "-m"
       - "8222"
-      - "--max_mem"
-      - "${NATS_MAX_MEM:-2G}"
-      - "--max_file"
-      - "${NATS_MAX_FILE:-20G}"
     ports:
       - "${NATS_CLIENT_PORT:-4222}:4222"
       - "${NATS_MONITOR_PORT:-8222}:8222"
