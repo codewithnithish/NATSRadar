@@ -210,8 +210,8 @@ func (m *Manager) Add(p Profile) (*Entry, error) {
 	p.Token = strings.TrimSpace(p.Token)
 	p.User = strings.TrimSpace(p.User)
 	p.Password = strings.TrimSpace(p.Password)
-	p.NKey = resolveContentOrPath(p.NKey)
-	p.Credentials = resolveContentOrPath(p.Credentials)
+	p.NKey = strings.TrimSpace(p.NKey)
+	p.Credentials = strings.TrimSpace(p.Credentials)
 
 	switch {
 	case p.Credentials != "":
@@ -367,19 +367,6 @@ func (m *Manager) Close() {
 		e.NC.Close()
 		delete(m.entries, id)
 	}
-}
-
-func resolveContentOrPath(val string) string {
-	trimmed := strings.TrimSpace(val)
-	if trimmed == "" {
-		return ""
-	}
-	if !strings.Contains(trimmed, "\n") && !strings.HasPrefix(trimmed, "SU") {
-		if data, err := os.ReadFile(trimmed); err == nil {
-			return string(data)
-		}
-	}
-	return trimmed
 }
 
 func determineAuthType(p Profile) string {

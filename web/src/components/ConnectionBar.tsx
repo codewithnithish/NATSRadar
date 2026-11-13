@@ -319,14 +319,14 @@ export function ConnectionBar({ connections, selectedId, onSelect }: Props) {
                   </label>
                   <input
                     type="password"
-                    placeholder="SUA... or /path/to/user.nk"
+                    placeholder="SUA... or -----BEGIN USER NKEY SEED-----"
                     value={nkey}
                     onChange={(e) => setNKey(e.target.value)}
                     style={{ width: "100%", fontFamily: "monospace", fontSize: 12 }}
                     required
                   />
                   <span className="muted small" style={{ fontSize: 11, display: "block", marginTop: 2 }}>
-                    Private seed starting with <code>SU</code>, or decorated PEM string, or local file path.
+                    Private seed starting with <code>SU</code>, or decorated PEM string.
                   </span>
                 </div>
               )}
@@ -343,7 +343,7 @@ export function ConnectionBar({ connections, selectedId, onSelect }: Props) {
                     </label>
                   </div>
                   <textarea
-                    placeholder="Paste .creds file content containing JWT and NKey Seed, or enter absolute file path"
+                    placeholder="Paste .creds file content containing JWT and NKey Seed (or click 'Load .creds file' above)"
                     value={credentials}
                     onChange={(e) => setCredentials(e.target.value)}
                     rows={4}

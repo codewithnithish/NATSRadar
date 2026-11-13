@@ -1,8 +1,6 @@
 package conn
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -61,36 +59,5 @@ func TestDetermineAuthType(t *testing.T) {
 				t.Errorf("determineAuthType() = %q, expected %q", got, tc.expected)
 			}
 		})
-	}
-}
-
-func TestResolveContentOrPath(t *testing.T) {
-	// Empty input
-	if got := resolveContentOrPath(""); got != "" {
-		t.Errorf("expected empty string, got %q", got)
-	}
-
-	// Direct raw NKey seed starting with SU
-	seed := "SUA1234567890ABC"
-	if got := resolveContentOrPath(seed); got != seed {
-		t.Errorf("expected direct seed returned as-is, got %q", got)
-	}
-
-	// Multiline content
-	multi := "-----BEGIN TEST-----\ncontent\n-----END TEST-----"
-	if got := resolveContentOrPath(multi); got != multi {
-		t.Errorf("expected multiline returned as-is, got %q", got)
-	}
-
-	// File on disk
-	tmpDir := t.TempDir()
-	filePath := filepath.Join(tmpDir, "test.creds")
-	fileContent := "sample-creds-data"
-	if err := os.WriteFile(filePath, []byte(fileContent), 0600); err != nil {
-		t.Fatalf("failed to write test file: %v", err)
-	}
-
-	if got := resolveContentOrPath(filePath); got != fileContent {
-		t.Errorf("expected file content %q, got %q", fileContent, got)
 	}
 }

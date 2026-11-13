@@ -35,8 +35,8 @@ Used when NATS is configured with static or dynamic authorization tokens.
 NKey is an Ed25519-based cryptographic authentication scheme without shared secrets. The client proves identity by signing server nonce challenges with a private seed.
 
 - **Inputs**:
-  - `NKey Seed`: A private user seed starting with `SU` (e.g. `SUAH4732LKJD...`), or a decorated PEM string, or a local file path (e.g. `/keys/user.nk`).
-- **Security**: The seed is never sent over the wire; it signs challenges in-memory and wipes ephemeral memory immediately.
+  - `NKey Seed`: A private user seed starting with `SU` (e.g. `SUAH4732LKJD...`), or a decorated PEM string (`-----BEGIN USER NKEY SEED-----`).
+- **Security**: The seed is never sent over the wire or read from server files; it signs challenges in-memory and wipes ephemeral memory immediately.
 
 ---
 
@@ -49,9 +49,8 @@ A `.creds` file is a chained file containing:
 2. `-----BEGIN USER NKEY SEED-----`
 
 ### How to Connect in NATSRadar:
-1. Click **`📁 Load .creds file`** to select your `.creds` file from disk. NATSRadar automatically parses the file and fills in the credentials!
-2. Or paste the content of your `.creds` file into the textarea.
-3. Or enter the absolute path to your credentials file on the server.
+1. Click **`📁 Load .creds file`** to select your `.creds` file from disk. The browser locally reads the file and fills in the credentials!
+2. Or paste the content of your `.creds` file directly into the textarea.
 
 ---
 
