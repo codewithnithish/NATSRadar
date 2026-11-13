@@ -87,6 +87,18 @@ func TestConnectionValidation(t *testing.T) {
 	if res.StatusCode != 404 || !strings.Contains(body, "connection_not_found") {
 		t.Errorf("unknown connection: %d %s", res.StatusCode, body)
 	}
+
+	// Invalid NKey seed should be rejected with 400
+	res, body = do(t, "POST", ts.URL+"/api/connections", `{"name":"bad-nkey","url":"nats://127.0.0.1:4222","nkey":"not-a-valid-seed"}`)
+	if res.StatusCode != 400 || !strings.Contains(body, "invalid_connection") {
+		t.Errorf("invalid nkey: got %d %s, want 400", res.StatusCode, body)
+	}
+
+	// Invalid credentials content should be rejected with 400
+	res, body = do(t, "POST", ts.URL+"/api/connections", `{"name":"bad-creds","url":"nats://127.0.0.1:4222","credentials":"not-valid-creds"}`)
+	if res.StatusCode != 400 || !strings.Contains(body, "invalid_connection") {
+		t.Errorf("invalid creds: got %d %s, want 400", res.StatusCode, body)
+	}
 }
 
 func TestConnectionAndStreamsEndToEnd(t *testing.T) {
