@@ -132,6 +132,8 @@ type addConnectionRequest struct {
 	Token              string `json:"token"`
 	User               string `json:"user"`
 	Password           string `json:"password"`
+	NKey               string `json:"nkey"`
+	Credentials        string `json:"credentials"`
 	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
 	CACert             string `json:"caCert"`
 	ClientCert         string `json:"clientCert"`
@@ -152,6 +154,8 @@ func (s *Server) addConnection(w http.ResponseWriter, r *http.Request) {
 		Token:              req.Token,
 		User:               req.User,
 		Password:           req.Password,
+		NKey:               req.NKey,
+		Credentials:        req.Credentials,
 		InsecureSkipVerify: req.InsecureSkipVerify,
 		CACert:             req.CACert,
 		ClientCert:         req.ClientCert,

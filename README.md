@@ -48,9 +48,11 @@ Think **"Kafka UI / Redis Insight, for NATS"**.
   - Synchronous request/reply tester with round-trip latency metrics and response inspection.
 - **⚙️ Server & Cluster Overview**:
   - NATS runtime metrics (`/varz`), CPU/Memory usage, JetStream memory & disk storage meters.
-- **🔐 Security & Persistent Clusters**:
-  - **Authentication**: Built-in login screen, session management, and HTTP Basic Auth.
+- **🔐 Enterprise Security & Full NATS Authentication**:
+  - **Full-Spectrum NATS Auth**: Connect to secured NATS clusters using **Username & Password**, **Auth Token**, **NKey Seed** (`SU...`), or **Decentralized User Credentials** (`.creds` with one-click file upload & JWT decoding).
   - **TLS & mTLS**: Custom Root CA certs, Client Certificate/Key (mTLS), InsecureSkipVerify, and SNI hostname overrides for Kubernetes Ingress.
+  - **Auth Badges**: Real-time visual indicator badges (`👤 User/Pass`, `🪙 Token`, `🔐 NKey`, `📜 Creds`, `🪪 mTLS`) on active cluster connections.
+  - **Built-in Console Authentication**: Built-in login screen, session management, and HTTP Basic Auth.
   - **Persistent Connections**: Auto-saves added connections to disk (`.data/connections.json`) with `0600` permissions.
 - **☀️/🌙 Theme Switcher**:
   - Instant Light/Dark mode toggle with `localStorage` persistence.
@@ -157,8 +159,8 @@ All write operations enforce the connection's `readOnly` setting. When `NATSRADA
 - `POST /api/auth/logout` — Invalidate session
 
 ### Connections
-- `GET /api/connections` — List connections
-- `POST /api/connections` — Register cluster (supports TLS/mTLS/CA certs)
+- `GET /api/connections` — List connections with auth status badges
+- `POST /api/connections` — Register cluster (supports Username/Password, Token, NKey, `.creds` JWT, and TLS/mTLS)
 - `DELETE /api/connections/{id}` — Remove connection
 
 ### Streams & Consumers

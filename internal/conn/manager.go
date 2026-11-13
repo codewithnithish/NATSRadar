@@ -21,6 +21,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"github.com/nats-io/nkeys"
 
 	"github.com/codewithnithish/natsradar/internal/storage"
 )
@@ -44,6 +45,8 @@ type Profile struct {
 	Token              string `json:"token,omitempty"`
 	User               string `json:"user,omitempty"`
 	Password           string `json:"password,omitempty"`
+	NKey               string `json:"nkey,omitempty"`
+	Credentials        string `json:"credentials,omitempty"`
 	InsecureSkipVerify bool   `json:"insecureSkipVerify,omitempty"`
 	CACert             string `json:"caCert,omitempty"`
 	ClientCert         string `json:"clientCert,omitempty"`
@@ -66,6 +69,7 @@ type Info struct {
 	ReadOnly           bool   `json:"readOnly"`
 	InsecureSkipVerify bool   `json:"insecureSkipVerify,omitempty"`
 	HasTLS             bool   `json:"hasTls,omitempty"`
+	AuthType           string `json:"authType,omitempty"`
 	Status             string `json:"status"`
 	ServerVersion      string `json:"serverVersion,omitempty"`
 	ConnectedURL       string `json:"connectedUrl,omitempty"`
@@ -203,9 +207,71 @@ func (m *Manager) Add(p Profile) (*Entry, error) {
 			m.log.Info("nats reconnected", "connection", id, "server", c.ConnectedUrlRedacted())
 		}),
 	}
+	p.Token = strings.TrimSpace(p.Token)
+	p.User = strings.TrimSpace(p.User)
+	p.Password = strings.TrimSpace(p.Password)
+	p.NKey = resolveContentOrPath(p.NKey)
+	p.Credentials = resolveContentOrPath(p.Credentials)
+
 	switch {
+	case p.Credentials != "":
+		credsBytes := []byte(p.Credentials)
+		jwt, err := nkeys.ParseDecoratedJWT(credsBytes)
+		if err != nil {
+			return nil, fmt.Errorf("%w: failed to parse jwt from credentials: %v", ErrInvalid, err)
+		}
+		if _, err := nkeys.ParseDecoratedNKey(credsBytes); err != nil {
+			return nil, fmt.Errorf("%w: failed to parse nkey from credentials: %v", ErrInvalid, err)
+		}
+		credsContent := p.Credentials
+		userCB := func() (string, error) { return jwt, nil }
+		sigCB := func(nonce []byte) ([]byte, error) {
+			kp, err := nkeys.ParseDecoratedNKey([]byte(credsContent))
+			if err != nil {
+				return nil, err
+			}
+			defer kp.Wipe()
+			return kp.Sign(nonce)
+		}
+		opts = append(opts, nats.UserJWT(userCB, sigCB))
+
+	case p.NKey != "":
+		raw := p.NKey
+		var kp nkeys.KeyPair
+		var err error
+		if strings.Contains(raw, "-----BEGIN") {
+			kp, err = nkeys.ParseDecoratedNKey([]byte(raw))
+		} else {
+			kp, err = nkeys.FromSeed([]byte(raw))
+		}
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid nkey seed: %v", ErrInvalid, err)
+		}
+		pub, err := kp.PublicKey()
+		kp.Wipe()
+		if err != nil {
+			return nil, fmt.Errorf("%w: failed to derive public key from nkey seed: %v", ErrInvalid, err)
+		}
+		nkeyContent := p.NKey
+		sigCB := func(nonce []byte) ([]byte, error) {
+			var k nkeys.KeyPair
+			var err error
+			if strings.Contains(nkeyContent, "-----BEGIN") {
+				k, err = nkeys.ParseDecoratedNKey([]byte(nkeyContent))
+			} else {
+				k, err = nkeys.FromSeed([]byte(nkeyContent))
+			}
+			if err != nil {
+				return nil, err
+			}
+			defer k.Wipe()
+			return k.Sign(nonce)
+		}
+		opts = append(opts, nats.Nkey(pub, sigCB))
+
 	case p.Token != "":
 		opts = append(opts, nats.Token(p.Token))
+
 	case p.User != "":
 		opts = append(opts, nats.UserInfo(p.User, p.Password))
 	}
@@ -303,6 +369,42 @@ func (m *Manager) Close() {
 	}
 }
 
+func resolveContentOrPath(val string) string {
+	trimmed := strings.TrimSpace(val)
+	if trimmed == "" {
+		return ""
+	}
+	if !strings.Contains(trimmed, "\n") && !strings.HasPrefix(trimmed, "SU") {
+		if data, err := os.ReadFile(trimmed); err == nil {
+			return string(data)
+		}
+	}
+	return trimmed
+}
+
+func determineAuthType(p Profile) string {
+	switch {
+	case strings.TrimSpace(p.Credentials) != "":
+		return "credentials"
+	case strings.TrimSpace(p.NKey) != "":
+		return "nkey"
+	case strings.TrimSpace(p.Token) != "":
+		return "token"
+	case strings.TrimSpace(p.User) != "":
+		return "user_password"
+	case strings.TrimSpace(p.ClientCert) != "" && strings.TrimSpace(p.ClientKey) != "":
+		return "tls_cert"
+	default:
+		if u, err := url.Parse(p.URL); err == nil && u.User != nil {
+			if _, hasPass := u.User.Password(); hasPass {
+				return "user_password"
+			}
+			return "token"
+		}
+		return "none"
+	}
+}
+
 func (e *Entry) info() Info {
 	hasTLS := e.Profile.InsecureSkipVerify || e.Profile.CACert != "" || e.Profile.ClientCert != "" ||
 		strings.HasPrefix(e.Profile.URL, "tls://") || strings.HasPrefix(e.Profile.URL, "wss://")
@@ -313,6 +415,7 @@ func (e *Entry) info() Info {
 		ReadOnly:           e.Profile.ReadOnly,
 		InsecureSkipVerify: e.Profile.InsecureSkipVerify,
 		HasTLS:             hasTLS,
+		AuthType:           determineAuthType(e.Profile),
 		Status:             e.NC.Status().String(),
 		ServerVersion:      e.NC.ConnectedServerVersion(),
 		ConnectedURL:       e.NC.ConnectedUrlRedacted(),

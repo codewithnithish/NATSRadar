@@ -8,6 +8,7 @@ export interface ConnectionInfo {
   connectedUrl?: string;
   insecureSkipVerify?: boolean;
   hasTls?: boolean;
+  authType?: string;
 }
 
 export interface StreamSummary {
@@ -55,6 +56,8 @@ export interface NewConnection {
   token?: string;
   user?: string;
   password?: string;
+  nkey?: string;
+  credentials?: string;
   insecureSkipVerify?: boolean;
   caCert?: string;
   clientCert?: string;
